@@ -70,7 +70,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.1"
+	version = "0.0.5"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -110,15 +110,16 @@ func getCLIArgs() (config ARGS) {
 	// Handle -h help
 	flag.Usage = func() { printHelp(version) }
 
+	// Parse CLI flags
+	flag.Parse()
+
+	// Set config values
 	config.Archived = *Archived
 	config.BoardID = *BoardID
 	config.LabelID = *LabelID
 	config.ListLabelIDs = *ListLabelIDs
 	config.ListTotalCards = *ListTotalCards
 	config.StoragePath = *StoragePath
-
-	// Parse CLI flags
-	flag.Parse()
 
 	// Handle -v version
 	if *ver {
