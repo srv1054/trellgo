@@ -147,21 +147,23 @@ func getCLIArgs() (config ARGS) {
 func getOSENV() (config ENV) {
 
 	config.TRELLOAPIKEY = os.Getenv("TRELLGO_APIKEY")
+	config.TRELLOAPITOK = os.Getenv("TRELLGO_APITOK")
+	config.TRELLOAPIURL = os.Getenv("TRELLGO_APIURL")
 
 	return config
 }
 
 // printHelp - prints help menu when -h is used on CLI
 func printHelp(version string) {
-	fmt.Printf("\trellgo v%s by srv1054 (github.com/srv1054/trellgo)\n", version)
+	fmt.Printf("\ttrellgo v%s by srv1054 (github.com/srv1054/trellgo)\n", version)
 	fmt.Println()
-	fmt.Println("Usage: trellgo [options]")
+	fmt.Println("Usage: ./trellgo [options]")
 	fmt.Println("Options:")
 	fmt.Printf("  -a\t\tInclude archived cards in dump (REQUIRED)\n")
 	fmt.Printf("  -b\t\tTrello board to dump BoardID\n")
 	fmt.Printf("  -l\t\tOnly include cards with this label ID\n")
-	fmt.Printf("  -labels\t\tRetrieve boards list of Label IDs\n")
-	fmt.Printf("  -count\t\tList total number of cards in the board\n")
+	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
+	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
 	fmt.Printf("  -v\t\ttPrints version and exits\n")
 	fmt.Println()
