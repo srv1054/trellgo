@@ -76,7 +76,12 @@ func main() {
 	config.ARGS = getCLIArgs()
 	config.ENV = getOSENV()
 
+	if config.ARGS.ListLabelIDs {
+
+	}
+
 	// Create main directory if doesn't exist
+	dirCreate(config.ARGS.StoragePath)
 
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
@@ -89,7 +94,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Board Name:", board.Name)
+	fmt.Println("Processing Board Name:", board.Name)
 
 }
 
@@ -134,8 +139,8 @@ func getCLIArgs() (config ARGS) {
 		os.Exit(1)
 	}
 
-	// Check for required flag of Storage Path
-	if *StoragePath == "" {
+	// Check for required flag of Storage Path if not listing labels or card totals
+	if !*ListLabelIDs && !*ListTotalCards && *StoragePath == "" {
 		fmt.Println("Error: No Storage Path provided. REQUIRED")
 		printHelp(version)
 		os.Exit(1)
@@ -172,4 +177,20 @@ func printHelp(version string) {
 	fmt.Printf("Example: trellgo -labels")
 	fmt.Println()
 	os.Exit(0)
+}
+
+func dirCreate(storagePath string) {
+	// Check if main directory exists, if not create it
+	if _, err := os.Stat(storagePath); os.IsNotExist(err) {
+		fmt.Println("Creating main directory:", storagePath)
+		err := os.MkdirAll(storagePath, os.ModePerm)
+		if err != nil {
+			fmt.Println("Error: Unable to create main directory:", storagePath)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println("Main directory created:", storagePath)
+	} else {
+		fmt.Println("Main directory already exists:", storagePath)
+	}
 }
