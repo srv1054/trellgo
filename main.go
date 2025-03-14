@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/adlio/trello"
-	"github.com/jedib0t/go-pretty/table"
-	"github.com/jedib0t/go-pretty/text"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 // What are we doing
@@ -239,6 +239,7 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) {
 
 	for _, label := range labels {
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
+		t.AppendSeparator()
 	}
 
 	// Set style
