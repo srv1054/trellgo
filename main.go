@@ -244,8 +244,7 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) {
 
 	// Set style
 	t.SetStyle(table.StyleLight)
-	t.Style().Color.Header = text.Colors{text.BgHiYellow, text.FgBlack}
-	t.Style().Color.Footer = text.Colors{text.BgHiYellow, text.FgBlack}
+	t.Style().Color.Header = text.Colors{text.FgHiGreen, text.Bold}
 
 	// Render a markdown table
 	if markdown {
