@@ -102,8 +102,11 @@ func main() {
 			os.Exit(1)
 		}
 
+		fmt.Println()
 		fmt.Println("Label IDs for Board ID:", board.ID, "Board Name:", board.Name)
+		fmt.Println()
 		prettyPrintLabels(labels)
+		fmt.Println()
 		os.Exit(0)
 	}
 
@@ -238,6 +241,9 @@ func prettyPrintLabels(labels []*trello.Label) {
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
 	}
 
+	t.AppendFooter(table.Row{"", "", ""})
+
+	// Set style
 	t.SetStyle(table.StyleLight)
 	t.Style().Color.Header = text.Colors{text.BgHiCyan, text.FgBlack}
 	// Render normal table to console
@@ -245,4 +251,5 @@ func prettyPrintLabels(labels []*trello.Label) {
 	// Render a markdown table
 	t.RenderMarkdown()
 
+	fmt.Println()
 }
