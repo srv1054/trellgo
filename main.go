@@ -7,6 +7,7 @@ import (
 
 	"github.com/adlio/trello"
 	"github.com/jedib0t/go-pretty/table"
+	"github.com/jedib0t/go-pretty/text"
 )
 
 // What are we doing
@@ -229,17 +230,19 @@ func prettyPrintLabels(labels []*trello.Label) {
 	var (
 		t = table.NewWriter()
 	)
-	//t := table.NewWriter()
+
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Label Name", "Label Color", "Label UID"})
 
 	for _, label := range labels {
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
-		//t.App()
 	}
 
-	//t.AppendRow([]interface{}{300, "Tyrion", "Lannister", 5000})
-	//t.AppendFooter(table.Row{"", "", "Total", 10000})
+	t.SetStyle(table.StyleLight)
+	t.Style().Color.Header = text.Colors{text.BgHiCyan, text.FgBlack}
+	// Render normal table to console
 	t.Render()
+	// Render a markdown table
+	t.RenderMarkdown()
 
 }
