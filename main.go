@@ -70,7 +70,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.5"
+	version = "0.0.7"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -85,6 +85,30 @@ func main() {
 
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
+
+	// Process Label List Request
+	if config.ARGS.ListLabelIDs {
+
+		board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
+		if err != nil {
+			fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		labels, err := board.GetLabels(trello.Defaults())
+		if err != nil {
+			fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Label IDs for Board ID:", board.ID, "Board Name:", board.Name)
+		for _, label := range labels {
+			fmt.Println("Label ID:", label.ID, "Label Name:", label.Name, "Label Color:", label.Color)
+		}
+		os.Exit(0)
+	}
 
 	// Process board data
 	board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
