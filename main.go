@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/adlio/trello"
+	"github.com/jedib0t/go-pretty/table"
 )
 
 // What are we doing
@@ -70,7 +71,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.7"
+	version = "0.0.8"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -101,9 +102,7 @@ func main() {
 		}
 
 		fmt.Println("Label IDs for Board ID:", board.ID, "Board Name:", board.Name)
-		for _, label := range labels {
-			fmt.Println("Label ID:", label.ID, "Label Name:", label.Name, "Label Color:", label.Color)
-		}
+		prettyPrintLabels(labels)
 		os.Exit(0)
 	}
 
@@ -223,4 +222,24 @@ func dirCreate(storagePath string) {
 	} else {
 		fmt.Println("Main directory already exists:", storagePath)
 	}
+}
+
+func prettyPrintLabels(labels []*trello.Label) {
+
+	var (
+		t = table.NewWriter()
+	)
+	//t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Label Name", "Label Color", "Label UID"})
+
+	for _, label := range labels {
+		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
+		//t.App()
+	}
+
+	//t.AppendRow([]interface{}{300, "Tyrion", "Lannister", 5000})
+	//t.AppendFooter(table.Row{"", "", "Total", 10000})
+	t.Render()
+
 }
