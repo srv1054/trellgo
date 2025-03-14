@@ -142,6 +142,9 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 		if label.Color == "" {
 			label.Color = "No Color"
 		}
+		if label.Name == "" {
+			label.Name = "No Name"
+		}
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
 		t.AppendSeparator()
 	}
