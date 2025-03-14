@@ -105,7 +105,7 @@ func main() {
 		fmt.Println()
 		fmt.Println("Label IDs for Board ID:", board.ID, "Board Name:", board.Name)
 		fmt.Println()
-		prettyPrintLabels(labels)
+		prettyPrintLabels(labels, false)
 		fmt.Println()
 		os.Exit(0)
 	}
@@ -228,7 +228,7 @@ func dirCreate(storagePath string) {
 	}
 }
 
-func prettyPrintLabels(labels []*trello.Label) {
+func prettyPrintLabels(labels []*trello.Label, markdown bool) {
 
 	var (
 		t = table.NewWriter()
@@ -246,13 +246,14 @@ func prettyPrintLabels(labels []*trello.Label) {
 	t.Style().Color.Header = text.Colors{text.BgHiYellow, text.FgBlack}
 	t.Style().Color.Footer = text.Colors{text.BgHiYellow, text.FgBlack}
 
-	// Render normal table to console
-	t.Render()
-
-	fmt.Println()
-
 	// Render a markdown table
-	t.RenderMarkdown()
+	if markdown {
+		fmt.Println()
+		t.RenderMarkdown()
+	} else {
+		// Render normal table to console
+		t.Render()
+	}
 
 	fmt.Println()
 }
