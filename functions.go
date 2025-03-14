@@ -212,7 +212,7 @@ func downLoadFile(url string, localFilePath string) error {
 	if fileName == "" {
 		filePath = localFilePath + "UnknownFile"
 	} else {
-		filePath = localFilePath + "/" + fileName
+		filePath = localFilePath + fileName
 	}
 
 	// Create the file

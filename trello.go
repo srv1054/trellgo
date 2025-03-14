@@ -37,6 +37,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	}
 
 	//Create markdown list of labels and their names/colors
+	fmt.Println("Grabbing labels for board and saving as Markdown BoardLabels.md")
 	labels, err := board.GetLabels(trello.Defaults())
 	if err != nil {
 		fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
