@@ -80,9 +80,6 @@ func main() {
 
 	}
 
-	// Create main directory if doesn't exist
-	dirCreate(config.ARGS.StoragePath)
-
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
 
@@ -110,7 +107,16 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Process Card Counts Request
+	if config.ARGS.ListTotalCards {
+		os.Exit(0)
+	}
+
 	// Process board data
+
+	// Create main directory if doesn't exist
+	dirCreate(config.ARGS.StoragePath)
+
 	board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
 	if err != nil {
 		fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
