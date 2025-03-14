@@ -72,7 +72,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.8"
+	version = "0.0.10"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -115,14 +115,17 @@ func main() {
 			os.Exit(1)
 		}
 
-		cards, err := board.GetCards(trello.Arguments{"cards": "all"})
-		if err != nil {
-			fmt.Println("Error: Unable to get card data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
-			os.Exit(1)
-		}
+		fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
+		totalCards, _ := board.GetCards(trello.Arguments{"filter": "all"})
+		openCards, _ := board.GetCards(trello.Arguments{"filter": "open"})
+		closedCards, _ := board.GetCards(trello.Arguments{"filter": "closed"})
+		visibleCards, _ := board.GetCards(trello.Arguments{"filter": "visible"}) // Visible cards are open and not archived
 
-		fmt.Printf("\n\nTotal Cards for Board: %s (%s)\n\n", board.Name, board.ID)
-		fmt.Println("Total Cards:", len(cards))
+		fmt.Printf("\n\nCard Counts for Board: %s (%s)\n", board.Name, board.ID)
+		fmt.Println("Total Cards:", len(totalCards))
+		fmt.Println("Open Cards:", len(openCards))
+		fmt.Println("Closed Cards:", len(closedCards))
+		fmt.Println("Visible Cards:", len(visibleCards))
 
 		os.Exit(0)
 	}
