@@ -17,9 +17,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	// Build File System Structure
 	// Create main directory
-	dirCreate(SanitizePathName(config.ARGS.StoragePath))
+	dirCreate(config.ARGS.StoragePath)
 	// Create directory in path named by board name
-	dirCreate(SanitizePathName(config.ARGS.StoragePath + "/" + board.Name))
+	tmpPath := SanitizePathName(board.Name)
+	dirCreate(config.ARGS.StoragePath + "/" + tmpPath)
 
 	// Board Level Data
 	// Save board background image if exists
@@ -74,9 +75,11 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			os.Exit(1)
 		}
 		// create list directory
-		dirCreate(SanitizePathName(config.ARGS.StoragePath + "/" + board.Name + "/" + list.Name))
+		tmpPath = SanitizePathName(list.Name)
+		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + tmpPath)
 		// Create directory for card name
-		dirCreate(SanitizePathName(config.ARGS.StoragePath + "/" + board.Name + "/" + list.Name + "/" + card.Name))
+		tmpPath = SanitizePathName(card.Name)
+		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + list.Name + "/" + tmpPath)
 
 		/*
 			In Card Directory store:

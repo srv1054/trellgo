@@ -23,7 +23,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.12"
+	version = "0.0.13"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
