@@ -121,11 +121,19 @@ func main() {
 		closedCards, _ := board.GetCards(trello.Arguments{"filter": "closed"})
 		visibleCards, _ := board.GetCards(trello.Arguments{"filter": "visible"}) // Visible cards are open and not archived
 
-		fmt.Printf("\n\nCard Counts for Board: %s (%s)\n", board.Name, board.ID)
-		fmt.Println("Total Cards:", len(totalCards))
-		fmt.Println("Open Cards:", len(openCards))
-		fmt.Println("Closed Cards:", len(closedCards))
-		fmt.Println("Visible Cards:", len(visibleCards))
+		t := table.NewWriter()
+		t.SetOutputMirror(os.Stdout)
+		t.AppendRow([]interface{}{"Total Cards", len(totalCards)})
+		t.AppendSeparator()
+		t.AppendRow([]interface{}{"Open Cards", len(openCards)})
+		t.AppendSeparator()
+		t.AppendRow([]interface{}{"Closed Cards", len(closedCards)})
+		t.AppendSeparator()
+		t.AppendRow([]interface{}{"Visible Cards", len(visibleCards)})
+
+		t.SetStyle(table.StyleLight)
+		t.Style().Color.Header = text.Colors{text.FgHiGreen, text.Bold}
+		t.Render()
 
 		os.Exit(0)
 	}
