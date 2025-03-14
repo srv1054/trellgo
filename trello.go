@@ -11,8 +11,10 @@ import (
 func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	var (
-		cards []*trello.Card
-		err   error
+		cards         []*trello.Card
+		err           error
+		cleanListPath string
+		cleanCardPath string
 	)
 
 	// Build File System Structure
@@ -65,7 +67,6 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		os.Exit(1)
 	}
 
-	// Card Level Data
 	// Loop through cards and dump to directory structure
 	for _, card := range cards {
 
@@ -76,11 +77,32 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			os.Exit(1)
 		}
 		// create list directory
-		tmpPath = SanitizePathName(list.Name)
-		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + tmpPath)
+		cleanListPath = SanitizePathName(list.Name)
+		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
 		// Create directory for card name
-		tmpPath = SanitizePathName(card.Name)
-		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + list.Name + "/" + tmpPath)
+		cleanCardPath = SanitizePathName(card.Name)
+		cardPath := config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
+		dirCreate(cardPath)
+
+		// Card Level Data
+		fmt.Println("Dumping card:", card.Name)
+		// Create markdown file for card description
+		err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), 0644)
+		if err != nil {
+			panic(err)
+		}
+		// Save Attachments - UNTESTED
+		dirCreate(cardPath + "/attachments")
+		for _, attachment := range card.Attachments {
+			url := attachment.URL
+			localFilePath := cardPath + "/attachments/" + attachment.Name
+			err := downLoadFile(url, localFilePath)
+			if err != nil {
+				fmt.Println("Error: Unable to download attachment for card", card.Name)
+				fmt.Println(err)
+			}
+
+		}
 
 		/*
 			In Card Directory store:
