@@ -238,6 +238,9 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) {
 	t.AppendHeader(table.Row{"Label Name", "Label Color", "Label UID"})
 
 	for _, label := range labels {
+		if label.Color == "" {
+			label.Color = "No Color"
+		}
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
 		t.AppendSeparator()
 	}
