@@ -1,9 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"path"
+	"regexp"
+	"strings"
 
 	"github.com/adlio/trello"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -122,10 +128,11 @@ func dirCreate(storagePath string) {
 }
 
 // prettyPrintLabels - Print out the labels output in a pretty table
-func prettyPrintLabels(labels []*trello.Label, markdown bool) {
+func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 
 	var (
-		t = table.NewWriter()
+		t   = table.NewWriter()
+		buf bytes.Buffer
 	)
 
 	t.SetOutputMirror(os.Stdout)
@@ -145,12 +152,91 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) {
 
 	// Render a markdown table
 	if markdown {
-		fmt.Println()
+		// Put in a buffer instead of console
+		t.SetOutputMirror(&buf)
+
+		// Render the table to the buffer
 		t.RenderMarkdown()
+
+		// Return the buffage
+		return buf
+
 	} else {
 		// Render normal table to console
 		t.Render()
 	}
 
 	fmt.Println()
+
+	// Return empty buffer
+	return buf
+}
+
+// SanitizePath - Sanitize the path for file system before creating directories.  Returns sanitized string
+func SanitizePathName(name string) string {
+	// Define allowed characters (letters, numbers, underscores, dashes, and dots)
+	re := regexp.MustCompile(`[^a-zA-Z0-9 ._-]`)
+
+	// Replace disallowed characters with underscores
+	sanitized := re.ReplaceAllString(name, "-")
+
+	// Trim leading and trailing dots or underscores to avoid hidden files or empty names
+	sanitized = strings.Trim(sanitized, "._-")
+
+	// Ensure it is not empty
+	if sanitized == "" {
+		fmt.Printf("\n\nRequested path name %v is empty after sanitization\nExit!\n\n", name)
+		os.Exit(1)
+	}
+
+	// Limit length (optional, e.g., 255 characters)
+	if len(sanitized) > 255 {
+		sanitized = sanitized[:255]
+	}
+
+	return sanitized
+}
+
+// downLoadFile - Download a remote file to the local drive for attachments, etc
+func downLoadFile(url string, localFilePath string) error {
+
+	var (
+		filePath string
+	)
+
+	// Extract filename from the URL
+	fileName := path.Base(url)
+	if fileName == "" {
+		filePath = localFilePath + "UnknownFile"
+	} else {
+		filePath = localFilePath + "/" + fileName
+	}
+
+	// Create the file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Downloaded:", filePath)
+	return nil
 }
