@@ -241,12 +241,10 @@ func prettyPrintLabels(labels []*trello.Label) {
 		t.AppendRow([]interface{}{label.Name, label.Color, label.ID})
 	}
 
-	t.AppendFooter(table.Row{})
-
 	// Set style
 	t.SetStyle(table.StyleLight)
-	t.Style().Color.Header = text.Colors{text.BgHiCyan, text.FgBlack}
-	t.Style().Color.Footer = text.Colors{text.BgHiCyan, text.FgBlack}
+	t.Style().Color.Header = text.Colors{text.BgHiYellow, text.FgBlack}
+	t.Style().Color.Footer = text.Colors{text.BgHiYellow, text.FgBlack}
 
 	// Render normal table to console
 	t.Render()
