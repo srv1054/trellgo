@@ -91,27 +91,39 @@ func main() {
 		board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
 		if err != nil {
 			fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
-			fmt.Println(err)
 			os.Exit(1)
 		}
 
 		labels, err := board.GetLabels(trello.Defaults())
 		if err != nil {
 			fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
-			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		fmt.Println()
-		fmt.Println("Label IDs for Board ID:", board.ID, "Board Name:", board.Name)
-		fmt.Println()
+		fmt.Printf("\n\nLabel IDs for Board: %s (%s)\n\n", board.Name, board.ID)
 		prettyPrintLabels(labels, false)
-		fmt.Println()
+
 		os.Exit(0)
 	}
 
 	// Process Card Counts Request
 	if config.ARGS.ListTotalCards {
+
+		board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
+		if err != nil {
+			fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
+			os.Exit(1)
+		}
+
+		cards, err := board.GetCards(trello.Arguments{"cards": "all"})
+		if err != nil {
+			fmt.Println("Error: Unable to get card data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n\nTotal Cards for Board: %s (%s)\n\n", board.Name, board.ID)
+		fmt.Println("Total Cards:", len(cards))
+
 		os.Exit(0)
 	}
 
