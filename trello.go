@@ -107,17 +107,19 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		if len(attachments) > 0 {
 			dirCreate(cardPath + "/attachments")
-			fmt.Println("Number of ATTACHMENTS: " + strconv.Itoa(len(attachments)))
+			fmt.Println(card.Name + " has  " + strconv.Itoa(len(attachments)) + " attachments")
 
 			for _, a := range attachments {
-				url := a.URL
-				localFilePath := cardPath + "/attachments/" + a.Name
-				err := downLoadFile(url, localFilePath)
-				fmt.Printf("Downloading attachment: %s\n", a.Name)
-				if err != nil {
-					fmt.Println("Error: Unable to download attachment for card", card.Name)
-					fmt.Println(err)
-				}
+
+				fmt.Printf("%#v\n", a)
+				//url := a.URL
+				//localFilePath := cardPath + "/attachments/" + a.Name
+				//err := downLoadFile(url, localFilePath)
+				//fmt.Printf("Downloading attachment: %s\n", a.Name)
+				//if err != nil {
+				//	fmt.Println("Error: Unable to download attachment for card", card.Name)
+				//	fmt.Println(err)
+				//}
 
 			}
 		} else {
