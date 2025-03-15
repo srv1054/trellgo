@@ -99,7 +99,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			panic(err)
 		}
 
-		// Save Attachments - UNTESTED
+		// Save Attachments
 		// 	check "cover" flag to see if attachment is a cover photo and tag it in the name
 		attachments, err := card.GetAttachments(trello.Defaults())
 		if err != nil {
@@ -118,10 +118,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 				if a.IsUpload {
 					// Download
-					filePath := cardPath + "/attachments/" + a.Name
+					filePath := cardPath + "/attachments/"
 					err := downLoadFile(a.URL, filePath)
 					if err != nil {
-						fmt.Println("Error downloading attachment")
+						fmt.Println("Error downloading attachment from " + a.URL + " to " + filePath)
 						fmt.Println(err)
 					}
 				} else {
