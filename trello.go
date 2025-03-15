@@ -81,6 +81,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cleanListPath = SanitizePathName(list.Name)
 		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
 		// Create directory for card name
+		// #### ADD ARCHIVED TAG TO DIR NAME IF ARCHIVED CARD
 		cleanCardPath = SanitizePathName(card.Name)
 		cardPath := config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
 		dirCreate(cardPath)
@@ -95,6 +96,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		// Save Attachments - UNTESTED
 		// 	check "cover" flag to see if attachment is a cover photo and tag it in the name
 		dirCreate(cardPath + "/attachments")
+		fmt.Printf("Number of ATTACHMENTS: %v", len(card.Attachments))
+		fmt.Printf("%v\n", card.Attachments)
 		for _, attachment := range card.Attachments {
 			url := attachment.URL
 			localFilePath := cardPath + "/attachments/" + attachment.Name
