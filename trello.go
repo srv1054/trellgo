@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/adlio/trello"
 )
@@ -81,8 +82,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cleanListPath = SanitizePathName(list.Name)
 		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
 		// Create directory for card name
-		// #### ADD ARCHIVED TAG TO DIR NAME IF ARCHIVED CARD
 		cleanCardPath = SanitizePathName(card.Name)
+		if card.Closed {
+			cleanCardPath = cleanCardPath + "-ARCHIVED"
+		}
 		cardPath := config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
 		dirCreate(cardPath)
 
@@ -93,21 +96,32 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if err != nil {
 			panic(err)
 		}
+
 		// Save Attachments - UNTESTED
 		// 	check "cover" flag to see if attachment is a cover photo and tag it in the name
-		dirCreate(cardPath + "/attachments")
-		fmt.Printf("Number of ATTACHMENTS: %v", len(card.Attachments))
-		fmt.Printf("%v\n", card.Attachments)
-		for _, attachment := range card.Attachments {
-			url := attachment.URL
-			localFilePath := cardPath + "/attachments/" + attachment.Name
-			err := downLoadFile(url, localFilePath)
-			fmt.Printf("Downloading attachment: %s\n", attachment.Name)
-			if err != nil {
-				fmt.Println("Error: Unable to download attachment for card", card.Name)
-				fmt.Println(err)
-			}
+		attachments, err := card.GetAttachments(trello.Defaults())
+		if err != nil {
+			fmt.Println("Error: Unable to get attachment data for card ID", card.ID)
+			fmt.Println(err)
+		}
 
+		if len(attachments) > 0 {
+			dirCreate(cardPath + "/attachments")
+			fmt.Println("Number of ATTACHMENTS: " + strconv.Itoa(len(attachments)))
+
+			for _, a := range attachments {
+				url := a.URL
+				localFilePath := cardPath + "/attachments/" + a.Name
+				err := downLoadFile(url, localFilePath)
+				fmt.Printf("Downloading attachment: %s\n", a.Name)
+				if err != nil {
+					fmt.Println("Error: Unable to download attachment for card", card.Name)
+					fmt.Println(err)
+				}
+
+			}
+		} else {
+			fmt.Println("No attachments found for card", card.Name)
 		}
 
 		/*
