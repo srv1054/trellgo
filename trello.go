@@ -111,7 +111,16 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 			for _, a := range attachments {
 
-				fmt.Printf("%#v\n", a)
+				fmt.Println("Attachment Name: " + a.Name)
+				fmt.Println("Attachment URL: " + a.URL)
+				fmt.Println("Attachment ID: " + a.ID)
+				fmt.Println("Attachment Size: " + a.Card.Cover.Size)
+				fmt.Println("Attachment Bytes: " + strconv.Itoa(a.Bytes))
+				fmt.Println("Attachment Date: " + a.Date)
+				fmt.Println("Attachment MimeType: " + a.MimeType)
+				fmt.Println("Attachment IsUpload: " + strconv.FormatBool(a.IsUpload))
+				fmt.Println("Attachment ID Member: " + a.IDMember)
+
 				//url := a.URL
 				//localFilePath := cardPath + "/attachments/" + a.Name
 				//err := downLoadFile(url, localFilePath)
