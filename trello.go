@@ -111,10 +111,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 			for _, a := range attachments {
 
+				fmt.Println("Attachment Edge: " + a.EdgeColor)
 				fmt.Println("Attachment Name: " + a.Name)
 				fmt.Println("Attachment URL: " + a.URL)
 				fmt.Println("Attachment ID: " + a.ID)
-				fmt.Println("Attachment Size: " + a.Card.Cover.Size)
 				fmt.Println("Attachment Bytes: " + strconv.Itoa(a.Bytes))
 				fmt.Println("Attachment Date: " + a.Date)
 				fmt.Println("Attachment MimeType: " + a.MimeType)
