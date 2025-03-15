@@ -243,3 +243,39 @@ func downLoadFile(url string, localFilePath string) error {
 	fmt.Println("Downloaded:", filePath)
 	return nil
 }
+
+// downloadFileAuthHeader - download file from URL to local file system but provide a Auth Header Token
+func downloadFileAuthHeader(url, filename, apiToken string) error {
+	// Create a new HTTP request with Authorization header
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	// Add Authorization token
+	req.Header.Set("Authorization", "OAuth "+apiToken)
+
+	// Execute the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check if the response is OK
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file: %s (status: %d)", url, resp.StatusCode)
+	}
+
+	// Create the file
+	out, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Copy the response body to the file
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
