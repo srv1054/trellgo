@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strconv"
@@ -16,6 +17,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		err           error
 		cleanListPath string
 		cleanCardPath string
+		buff          bytes.Buffer
 	)
 
 	// Build File System Structure
@@ -105,6 +107,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			fmt.Println(err)
 		}
 
+		// Clear the old Bytes Buffer
+		buff.Reset()
+
 		if len(attachments) > 0 {
 			dirCreate(cardPath + "/attachments")
 			fmt.Println(card.Name + " has  " + strconv.Itoa(len(attachments)) + " attachments")
@@ -112,23 +117,25 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			for _, a := range attachments {
 
 				if a.IsUpload {
-					// Download file
-					fmt.Println("Uploaded file named: " + a.Name)
-					fmt.Println("URL: " + a.URL)
+					// Download
+					filePath := cardPath + "/attachments/" + a.Name
+					err := downLoadFile(a.URL, filePath)
+					if err != nil {
+						fmt.Println("Error downloading attachment")
+						fmt.Println(err)
+					}
 				} else {
-					fmt.Println("NON-Uploaded file name: " + a.Name)
-					fmt.Println("URL: " + a.URL)
+					// build a bytes.buffer
+					buff.WriteString(a.URL)
+					buff.WriteString("\n")
 				}
 
-				//url := a.URL
-				//localFilePath := cardPath + "/attachments/" + a.Name
-				//err := downLoadFile(url, localFilePath)
-				//fmt.Printf("Downloading attachment: %s\n", a.Name)
-				//if err != nil {
-				//	fmt.Println("Error: Unable to download attachment for card", card.Name)
-				//	fmt.Println(err)
-				//}
+			}
 
+			// Write buffer to disc for URL Attachments
+			err := os.WriteFile(cardPath+"/attachments/URL-Attachments.md", buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
 			}
 		} else {
 			fmt.Println("No attachments found for card", card.Name)
