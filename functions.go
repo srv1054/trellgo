@@ -245,7 +245,7 @@ func downLoadFile(url string, localFilePath string) error {
 }
 
 // downloadFileAuthHeader - download file from URL to local file system but provide a Auth Header Token
-func downloadFileAuthHeader(url, filename, apiToken string) error {
+func downloadFileAuthHeader(url, filename, apiKey string, apiToken string) error {
 	// Create a new HTTP request with Authorization header
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -253,7 +253,9 @@ func downloadFileAuthHeader(url, filename, apiToken string) error {
 	}
 
 	// Add Authorization token
-	req.Header.Set("Authorization", "OAuth "+apiToken)
+	//req.Header.Set("Authorization", "OAuth "+apiToken)
+	//Authorization: `OAuth oauth_consumer_key="${TRELLO_API_KEY}", oauth_token="${TRELLO_TOKEN}"`,
+	req.Header.Set("Authorization", "OAuth oauth_consumer_key="+apiToken+", oauth_token="+apiToken)
 
 	// Execute the request
 	client := &http.Client{}
