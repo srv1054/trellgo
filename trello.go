@@ -76,6 +76,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			fmt.Println("Error: Unable to get list data for list ID", card.IDList)
 			os.Exit(1)
 		}
+
 		// create list directory
 		cleanListPath = SanitizePathName(list.Name)
 		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
@@ -92,11 +93,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			panic(err)
 		}
 		// Save Attachments - UNTESTED
+		// 	check "cover" flag to see if attachment is a cover photo and tag it in the name
 		dirCreate(cardPath + "/attachments")
 		for _, attachment := range card.Attachments {
 			url := attachment.URL
 			localFilePath := cardPath + "/attachments/" + attachment.Name
 			err := downLoadFile(url, localFilePath)
+			fmt.Printf("Downloading attachment: %s\n", attachment.Name)
 			if err != nil {
 				fmt.Println("Error: Unable to download attachment for card", card.Name)
 				fmt.Println(err)
