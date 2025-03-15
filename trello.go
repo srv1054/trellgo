@@ -123,7 +123,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 					err := downLoadFile(authURL, filePath)
 					//err := downloadFileAuthHeader(a.URL, filePath, config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
 					if err != nil {
-						fmt.Println("Error downloading attachment from " + a.URL + " to " + filePath)
+						fmt.Println("Error downloading attachment from " + authURL + " to " + filePath)
 						fmt.Println(err)
 					}
 				} else {
