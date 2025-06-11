@@ -19,6 +19,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cleanListPath string
 		cleanCardPath string
 		cardPath      string
+		dueFileName   string
 		cardNumber    int
 		buff          bytes.Buffer
 	)
@@ -38,7 +39,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	// Save board background image if exists
 	if board.Prefs.BackgroundImage != "" {
 		url := board.Prefs.BackgroundImage
-		localFilePath := config.ARGS.StoragePath + "/" + board.Name + "/" + "BoardBackground-"
+		localFilePath := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardBackground-")
 		err := downLoadFile(url, localFilePath)
 		if err != nil {
 			fmt.Println("Error: Unable to download background image for board", board.Name)
@@ -60,7 +61,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		buf := prettyPrintLabels(labels, true)
 
 		// Write buffer content to a file
-		labelFileName := config.ARGS.StoragePath + "/" + board.Name + "/" + "BoardLabels.md"
+		labelFileName := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardLabels.md")
 		err := os.WriteFile(labelFileName, buf.Bytes(), 0644)
 		if err != nil {
 			panic(err)
@@ -81,7 +82,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			memberBuf.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
 		}
 		// Write buffer content to a file
-		memberFileName := config.ARGS.StoragePath + "/" + board.Name + "/" + "BoardMembers.md"
+		memberFileName := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardMembers.md")
 		err := os.WriteFile(memberFileName, memberBuf.Bytes(), 0644)
 		if err != nil {
 			panic(err)
@@ -114,21 +115,21 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		// create list directory
 		cleanListPath = SanitizePathName(list.Name)
-		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
+		dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath))
 		// Create directory for card name
 		cleanCardPath = SanitizePathName(card.Name)
 		// If card is archived, append -ARCHIVED to the card name or move to ARCHIVED directory
 		if card.Closed {
 			if !config.ARGS.SeparateArchived {
 				// If -split flag is not set, append -ARCHIVED to the card name
-				cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath + " (ARCHIVED)"
+				cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath, cleanCardPath+" (ARCHIVED)")
 				// If -split flag is set, move to ARCHIVED directory
 			} else {
-				cardPath = config.ARGS.StoragePath + "/" + board.Name + "/ARCHIVED/" + cleanListPath + "/" + cleanCardPath
+				cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, "ARCHIVED", cleanListPath, cleanCardPath)
 			}
 			// card is not archived
 		} else {
-			cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
+			cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath, cleanCardPath)
 		}
 
 		dirCreate(cardPath)
@@ -166,7 +167,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 				if a.IsUpload {
 					// Download
-					filePath := cardPath + "/attachments/"
+					filePath := filepath.Join(cardPath, "attachments")
 					// Format https://api.trello.com/1/cards/{idCard}/attachments/{idAttachment}/download/{attachmentFileName}
 					authURL := fmt.Sprintf("https://api.trello.com/1/cards/%s/attachments/%s/download/%s", card.ID, a.ID, a.Name)
 					err := downloadFileAuthHeader(authURL, filePath, config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
@@ -374,5 +375,78 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			historyFileName := cardPath + "/CardHistory.md"
 			_ = os.WriteFile(historyFileName, nil, 0644)
 		}
+
+		/*
+			Save Card Due Date
+			- Create markdown file for card due date
+		*/
+		if card.Due != nil {
+			if card.DueComplete {
+				dueFileName = cardPath + "/CardDueDate (Completed).md"
+			} else {
+				dueFileName = cardPath + "/CardDueDate.md"
+			}
+			err := os.WriteFile(dueFileName, []byte(card.Due.Format("2006-01-02 15:04:05")), 0644)
+
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created due date markdown file:", dueFileName)
+		} else {
+			fmt.Println("No due date found for card", card.Name)
+			// Create an empty due date markdown file if no due date found
+			// This is to ensure the file exists for future reference
+			dueFileName := cardPath + "/CardDueDate.md"
+			_ = os.WriteFile(dueFileName, nil, 0644)
+		}
+
+		/*
+			Save Card Start Date
+			- Create markdown file for card start date
+		*/
+		if card.Start != nil {
+			startFileName := cardPath + "/CardStartDate.md"
+			err := os.WriteFile(startFileName, []byte(card.Start.Format("2006-01-02 15:04:05")), 0644)
+
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created start date markdown file:", startFileName)
+		} else {
+			fmt.Println("No start date found for card", card.Name)
+			// Create an empty start date markdown file if no start date found
+			// This is to ensure the file exists for future reference
+			startFileName := cardPath + "/CardStartDate.md"
+			_ = os.WriteFile(startFileName, nil, 0644)
+		}
+
+		/*			Save Card Cover Image
+					- Download cover image if exists
+					- Save it in the card directory
+					- If cover is a color, save as a text file with the color name
+		*/
+		/* ##### SEE CHATGPT DISCUSSION ON THIS, TO TRY NEXT #####
+		/*if card.Cover != nil {
+			if card.Cover.IsImage() {
+				// Download cover image
+				url := card.Cover.GetImageURL()
+				localFilePath := filepath.Join(cardPath, "CardCover-")
+				err := downLoadFile(url, localFilePath)
+				if err != nil {
+					fmt.Println("Error: Unable to download cover image for card", card.Name)
+					fmt.Println(err)
+				}
+			} else if card.Cover.IsColor() {
+				// Save cover color as a text file
+				colorFileName := filepath.Join(cardPath, "CardCoverColor.md")
+				err := os.WriteFile(colorFileName, []byte(card.Cover.Color), 0644)
+				if err != nil {
+					fmt.Println("Error: Unable to save cover color for card", card.Name)
+					fmt.Println(err)
+				}
+			}
+		} else {
+			fmt.Println("No cover found for card", card.Name)
+		}*/
 	}
 }
