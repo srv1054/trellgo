@@ -319,6 +319,40 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 
 		/*
+			Save Card History
+			- Create markdown file for card history
+			- Include action type, date, and member who performed the action
+		*/
+		fmt.Println("Grabbing history for card:", card.Name)
+		history, err := card.GetActions(trello.Arguments{"filter": "all"})
+		if err != nil {
+			fmt.Println("Error: Unable to get history for card ID", card.ID)
+			continue
+		}
+		if len(history) > 0 {
+			// Clear the old Bytes Buffer
+			buff.Reset()
+			fmt.Println("Found", len(history), "history actions for card", card.Name)
+			for _, action := range history {
+				// Format action with type, date, and member
+				buff.WriteString(fmt.Sprintf("**%s** (%s): %s - %s\n", action.Type, action.Date.Format("2006-01-02 15:04:05"), action.MemberCreator.FullName, action.Data.Text))
+			}
+			// Create markdown file for card history
+			historyFileName := cardPath + "/CardHistory.md"
+			err = os.WriteFile(historyFileName, buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created history markdown file:", historyFileName)
+		} else {
+			fmt.Println("No history found for card", card.Name)
+			// Create an empty history markdown file if no history found
+			// This is to ensure the file exists for future reference
+			historyFileName := cardPath + "/CardHistory.md"
+			_ = os.WriteFile(historyFileName, nil, 0644)
+		}
+
+		/*
 			In Card Directory store:
 				~~ Card Description markdown
 				~~ Card Checklist markdown (including properly checked items)
@@ -328,7 +362,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				~~ Card Checklists into markdown file
 				~~ Card Comments into markdown file
 				~~ Card Users into markdown file
-				Card Labels markdown file
+				~~ Card Labels markdown file
 				Card History in markdown file
 		*/
 	}
