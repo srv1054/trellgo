@@ -276,17 +276,28 @@ func downLoadFile(fileURL string, localFilePath string) error {
 }
 
 // downloadFileAuthHeader - download file from URL to local file system but provide a Auth Header Token
-func downloadFileAuthHeader(url string, filename string, apiKey string, apiToken string) error {
+// Format https://api.trello.com/1/cards/{idCard}/attachments/{idAttachment}/download/{attachmentFileName}
+func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
+
+	u, err := url.Parse(fileURL)
+	if err != nil {
+		log.Fatalf("invalid URL: %v", err)
+	}
+
+	// Extract filename from the URL
+	fileName := path.Base(u.Path)
+	fullFile := localFilePath + fileName
+
+	fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", fullFile)
+
 	// Create a new HTTP request with Authorization header
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", fileURL, nil)
 	if err != nil {
 		return err
 	}
 
 	// Add Authorization token
-	//req.Header.Set("Authorization", "OAuth "+apiToken)
-	//Authorization: `OAuth oauth_consumer_key="${TRELLO_API_KEY}", oauth_token="${TRELLO_TOKEN}"`,
-	req.Header.Set("Authorization", "OAuth oauth_consumer_key="+apiKey+", oauth_token="+apiToken)
+	req.Header.Set("Authorization", fmt.Sprintf("OAuth oauth_consumer_key=\"%s\", oauth_token=\"%s\"", apiKey, apiToken))
 
 	// Execute the request
 	client := &http.Client{}
@@ -298,11 +309,11 @@ func downloadFileAuthHeader(url string, filename string, apiKey string, apiToken
 
 	// Check if the response is OK
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to download file: %s (status: %d)", url, resp.StatusCode)
+		return fmt.Errorf("failed to download file: %s (status: %d)", fileURL, resp.StatusCode)
 	}
 
 	// Create the file
-	out, err := os.Create(filename)
+	out, err := os.Create(fullFile)
 	if err != nil {
 		return err
 	}
