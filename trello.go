@@ -97,7 +97,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			}
 			// card is not archived
 		} else {
-			cardPath = config.ARGS.StoragePath + "/" + board.Name + cleanListPath + "/" + cleanCardPath
+			cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
 		}
 
 		dirCreate(cardPath)
