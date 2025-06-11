@@ -351,19 +351,5 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			historyFileName := cardPath + "/CardHistory.md"
 			_ = os.WriteFile(historyFileName, nil, 0644)
 		}
-
-		/*
-			In Card Directory store:
-				~~ Card Description markdown
-				~~ Card Checklist markdown (including properly checked items)
-				~~ Directory called attachments that stores:
-					~~ File attachments (tag cover photo in name)
-					~~ Links
-				~~ Card Checklists into markdown file
-				~~ Card Comments into markdown file
-				~~ Card Users into markdown file
-				~~ Card Labels markdown file
-				Card History in markdown file
-		*/
 	}
 }
