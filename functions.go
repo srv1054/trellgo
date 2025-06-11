@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -224,19 +225,26 @@ func SanitizePathName(name string) string {
 }
 
 // downLoadFile - Download a remote file to the local drive for attachments, etc
-func downLoadFile(url string, localFilePath string) error {
+func downLoadFile(fileURL string, localFilePath string) error {
 
 	var (
 		filePath string
 	)
 
+	u, err := url.Parse(fileURL)
+	if err != nil {
+		log.Fatalf("invalid URL: %v", err)
+	}
+
 	// Extract filename from the URL
-	fileName := path.Base(url)
+	fileName := path.Base(u.Path)
 	if fileName == "" {
 		filePath = localFilePath + "UnknownFile"
 	} else {
 		filePath = localFilePath + fileName
 	}
+
+	fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", filePath)
 
 	// Create the file
 	out, err := os.Create(filePath)
@@ -246,7 +254,7 @@ func downLoadFile(url string, localFilePath string) error {
 	defer out.Close()
 
 	// Get the data
-	resp, err := http.Get(url)
+	resp, err := http.Get(fileURL)
 	if err != nil {
 		return err
 	}

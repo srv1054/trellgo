@@ -90,7 +90,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if card.Closed {
 			if !config.ARGS.SeparateArchived {
 				// If -split flag is not set, append -ARCHIVED to the card name
-				cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath + "-ARCHIVED"
+				cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath + " (ARCHIVED)"
 				// If -split flag is set, move to ARCHIVED directory
 			} else {
 				cardPath = config.ARGS.StoragePath + "/" + board.Name + "/ARCHIVED/" + cleanListPath + "/" + cleanCardPath
