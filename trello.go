@@ -178,6 +178,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cardNumber = 0
 		fmt.Println("Found", len(card.IDCheckLists), "checklists for card", card.Name)
 
+		dirCreate(cardPath + "/checklists")
+
 		for _, checkList := range card.IDCheckLists {
 			// Clear the old Bytes Buffer
 			buff.Reset()
@@ -202,7 +204,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 			}
 
-			fullpath := filepath.Join(cardPath, checklistName+".md")
+			fullpath := filepath.Join(cardPath, "checklists", checklistName+".md")
 			if _, err := os.Stat(fullpath); err == nil {
 				// If file already exists, append a number to the filename
 				cardNumber++
