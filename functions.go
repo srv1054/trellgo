@@ -125,6 +125,7 @@ func printHelp(version string) {
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
+	fmt.Printf("  -split\tSeparate archived cards into their own directory (instead of mixed in and labeled with -ARCHIVED\n")
 	fmt.Printf("  -v\t\tPrints version and exits\n")
 	fmt.Println()
 	fmt.Printf("Example: trellgo -b c52d11s -l ff3sg135 -s '/path/to/here'\n")
