@@ -220,13 +220,43 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 
 		/*
+			Save Card Comments
+			- Create markdown file for card comments
+			- Include comment author and date
+		*/
+		fmt.Println("Grabbing comments for card:", card.Name)
+		comments, err := card.GetActions(trello.Arguments{"filter": "commentCard"})
+		if err != nil {
+			fmt.Println("Error: Unable to get comments for card ID", card.ID)
+			continue
+		}
+		if len(comments) > 0 {
+			// Clear the old Bytes Buffer
+			buff.Reset()
+			fmt.Println("Found", len(comments), "comments for card", card.Name)
+			for _, comment := range comments {
+				// Format comment with author and date
+				buff.WriteString(fmt.Sprintf("**%s** (%s): %s\n", comment.MemberCreator.FullName, comment.Date.Format("2006-01-02 15:04:05"), comment.Data.Text))
+			}
+			// Create markdown file for card comments
+			commentFileName := cardPath + "/CardComments.md"
+			err = os.WriteFile(commentFileName, buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created comments markdown file:", commentFileName)
+		} else {
+			fmt.Println("No comments found on card", card.Name)
+		}
+
+		/*
 			In Card Directory store:
 				~~ Card Description markdown
 				~~ Card Checklist markdown (including properly checked items)
 				~~ Directory called attachments that stores:
 					~~ File attachments (tag cover photo in name)
 					~~ Links
-				Card Checklists into markdown file
+				~~ Card Checklists into markdown file
 				Card Comments into markdown file
 				Card Users into markdown file
 				Card Labels markdown file
