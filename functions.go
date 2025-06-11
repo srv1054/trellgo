@@ -19,13 +19,15 @@ import (
 )
 
 type ARGS struct {
-	BoardID        string
-	Archived       bool
-	LabelID        string
-	ListLabelIDs   bool
-	ListTotalCards bool
-	StoragePath    string
+	Archived         bool
+	ListLabelIDs     bool
+	ListTotalCards   bool
+	SeparateArchived bool
+	StoragePath      string
+	BoardID          string
+	LabelID          string
 }
+
 type ENV struct {
 	TRELLOAPIKEY string
 	TRELLOAPITOK string
@@ -37,13 +39,14 @@ func getCLIArgs() (config ARGS) {
 
 	var (
 		// CLI Flags
-		ver            = flag.Bool("v", false, "Version Check")
-		BoardID        = flag.String("b", "", "Trello board to dump Unique Identifier")
-		Archived       = flag.Bool("a", false, "Include archived cards in dump")
-		LabelID        = flag.String("l", "", "Only include cards with this label ID")
-		ListLabelIDs   = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
-		ListTotalCards = flag.Bool("count", false, "List total number of cards in the board")
-		StoragePath    = flag.String("s", "", "Root Level path to store board information")
+		Archived         = flag.Bool("a", false, "Include archived cards in dump")
+		BoardID          = flag.String("b", "", "Trello board to dump Unique Identifier")
+		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
+		LabelID          = flag.String("l", "", "Only include cards with this label ID")
+		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
+		StoragePath      = flag.String("s", "", "Root Level path to store board information")
+		SeparateArchived = flag.Bool("split", false, "Separate archived cards into their own directory")
+		ver              = flag.Bool("v", false, "Version Check")
 	)
 
 	// Handle -h help
@@ -59,6 +62,7 @@ func getCLIArgs() (config ARGS) {
 	config.ListLabelIDs = *ListLabelIDs
 	config.ListTotalCards = *ListTotalCards
 	config.StoragePath = *StoragePath
+	config.SeparateArchived = *SeparateArchived
 
 	// Handle -v version
 	if *ver {
@@ -115,8 +119,8 @@ func printHelp(version string) {
 	fmt.Println()
 	fmt.Println("Usage: ./trellgo [options]")
 	fmt.Println("Options:")
-	fmt.Printf("  -a\t\tInclude archived cards in dump (REQUIRED)\n")
-	fmt.Printf("  -b\t\tTrello board to dump BoardID\n")
+	fmt.Printf("  -a\t\tInclude archived cards in dump\n")
+	fmt.Printf("  -b\t\tTrello board to dump BoardID (REQUIRED)\n")
 	fmt.Printf("  -l\t\tOnly include cards with this label ID\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -count\tList total number of cards in the board\n")

@@ -17,6 +17,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		err           error
 		cleanListPath string
 		cleanCardPath string
+		cardPath      string
 		buff          bytes.Buffer
 	)
 
@@ -85,10 +86,15 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		dirCreate(config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath)
 		// Create directory for card name
 		cleanCardPath = SanitizePathName(card.Name)
-		if card.Closed {
+		if card.Closed && !config.ARGS.SeparateArchived {
 			cleanCardPath = cleanCardPath + "-ARCHIVED"
 		}
-		cardPath := config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
+		if config.ARGS.SeparateArchived {
+			cardPath = config.ARGS.StoragePath + "/" + board.Name + "/" + cleanListPath + "/" + cleanCardPath
+
+		} else {
+			cardPath = config.ARGS.StoragePath + "/" + board.Name + "/ARCHIVED/" + cleanListPath + "/" + cleanCardPath
+		}
 		dirCreate(cardPath)
 
 		// Card Level Data

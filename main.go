@@ -23,7 +23,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.0.17"
+	version = "0.0.18"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -74,7 +74,7 @@ func main() {
 		t.AppendSeparator()
 		t.AppendRow([]interface{}{"Open Cards", len(openCards)})
 		t.AppendSeparator()
-		t.AppendRow([]interface{}{"Closed Cards", len(closedCards)})
+		t.AppendRow([]interface{}{"Archived Cards", len(closedCards)})
 		t.AppendSeparator()
 		t.AppendRow([]interface{}{"Visible Cards", len(visibleCards)})
 
