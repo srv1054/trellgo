@@ -177,6 +177,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		*/
 
 		cardNumber = 0
+		fmt.Println("Found", len(card.Checklists), "checklists for card", card.Name)
 		for _, checkList := range card.Checklists {
 			checklistName := SanitizePathName(checkList.Name)
 			for _, item := range checkList.CheckItems {
@@ -195,6 +196,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fullpath = filepath.Join(cardPath, checklistName+" "+strconv.Itoa(cardNumber)+".md")
 			}
 
+			fmt.Println("Creating checklist markdown file:", fullpath)
 			// Create markdown file for card checklists
 			err = os.WriteFile(fullpath, buff.Bytes(), 0644)
 			if err != nil {
