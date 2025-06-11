@@ -247,6 +247,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			fmt.Println("Created comments markdown file:", commentFileName)
 		} else {
 			fmt.Println("No comments found on card", card.Name)
+			// Create an empty comments markdown file if no comments found
+			// This is to ensure the file exists for future reference
+			commentFileName := cardPath + "/CardComments.md"
+			_ = os.WriteFile(commentFileName, nil, 0644)
 		}
 
 		/*
@@ -276,6 +280,42 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			fmt.Println("Created users markdown file:", userFileName)
 		} else {
 			fmt.Println("No users found on card", card.Name)
+			// Create an empty users markdown file if no users found
+			// This is to ensure the file exists for future reference
+			userFileName := cardPath + "/CardUsers.md"
+			_ = os.WriteFile(userFileName, nil, 0644)
+		}
+
+		/*
+			Save Card Labels
+		*/
+		fmt.Println("Grabbing labels for card:", card.Name)
+		cardWithLabels, err := client.GetCard(card.ID, trello.Arguments{"labels": "all"})
+		if err != nil {
+			fmt.Println("Error: Unable to get labels for card ID", card.ID)
+			continue
+		}
+		if len(cardWithLabels.Labels) > 0 {
+			// Clear the old Bytes Buffer
+			buff.Reset()
+			fmt.Println("Found", len(cardWithLabels.Labels), "labels for card", card.Name)
+			for _, label := range cardWithLabels.Labels {
+				// Format label with name and ID
+				buff.WriteString(fmt.Sprintf("**%s** - %s (%s)\n", label.Name, label.Color, label.ID))
+			}
+			// Create markdown file for card labels
+			labelFileName := cardPath + "/CardLabels.md"
+			err = os.WriteFile(labelFileName, buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created labels markdown file:", labelFileName)
+		} else {
+			fmt.Println("No labels found on card", card.Name)
+			// Create an empty labels markdown file if no labels found
+			// This is to ensure the file exists for future reference
+			labelFileName := cardPath + "/CardLabels.md"
+			_ = os.WriteFile(labelFileName, nil, 0644)
 		}
 
 		/*
@@ -287,7 +327,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 					~~ Links
 				~~ Card Checklists into markdown file
 				~~ Card Comments into markdown file
-				Card Users into markdown file
+				~~ Card Users into markdown file
 				Card Labels markdown file
 				Card History in markdown file
 		*/
