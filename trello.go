@@ -189,6 +189,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			}
 		} else {
 			fmt.Println("No attachments found for card", card.Name)
+			// Create an empty attachments directory if no attachments found
+			dirCreate(cardPath + "/attachments")
 		}
 
 		/*
