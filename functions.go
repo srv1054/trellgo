@@ -130,7 +130,9 @@ func printHelp(version string) {
 	fmt.Printf("  -v\t\tPrints version and exits\n")
 	fmt.Println()
 	fmt.Printf("Example: trellgo -b c52d11s -l ff3sg135 -s '/path/to/here'\n")
-	fmt.Printf("Example: trellgo -labels")
+	fmt.Printf("Example: trellgo -b c52d11s -a -split -s '/path/to/here'\n")
+	fmt.Printf("Example: trellgo -b t532aad -labels\n")
+	fmt.Printf("Example: trellgo -b 5f3g1a2 -count\n")
 	fmt.Println()
 	os.Exit(0)
 }
