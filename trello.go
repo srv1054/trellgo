@@ -67,6 +67,27 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 	}
 
+	/*		Get Board Members
+			- Create markdown file for board members
+			- Include member name and ID
+	*/
+	fmt.Println("Grabbing members for board:", board.Name)
+	members, err := board.GetMembers()
+	if err != nil {
+		fmt.Println("Error: Unable to get members for board ID", board.ID)
+	} else {
+		var memberBuf bytes.Buffer
+		for _, member := range members {
+			memberBuf.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
+		}
+		// Write buffer content to a file
+		memberFileName := config.ARGS.StoragePath + "/" + board.Name + "/" + "BoardMembers.md"
+		err := os.WriteFile(memberFileName, memberBuf.Bytes(), 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	/*
 		Get all cards (open unless -a flag is set which includes archived)
 	*/

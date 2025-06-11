@@ -1,7 +1,7 @@
 ## Things to add and do
 
 # Board Stuff  
-- [ ] Board members
+- [x] Board members
 - [ ] Add ability to filter board dump by specific LABELs
 
 # Card Stuff  
