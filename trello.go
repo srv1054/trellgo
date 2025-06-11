@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/adlio/trello"
@@ -18,17 +19,22 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cleanListPath string
 		cleanCardPath string
 		cardPath      string
+		cardNumber    int
 		buff          bytes.Buffer
 	)
 
-	// Build File System Structure
+	/*
+		Build File System Structure
+	*/
 	// Create main directory
 	dirCreate(config.ARGS.StoragePath)
 	// Create directory in path named by board name
 	tmpPath := SanitizePathName(board.Name)
 	dirCreate(config.ARGS.StoragePath + "/" + tmpPath)
 
-	// Board Level Data
+	/*
+		Board Level Data
+	*/
 	// Save board background image if exists
 	if board.Prefs.BackgroundImage != "" {
 		url := board.Prefs.BackgroundImage
@@ -42,7 +48,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		fmt.Println("No background image found for board", board.Name)
 	}
 
-	//Create markdown list of labels and their names/colors
+	/*
+		Create markdown list of labels and their names/colors
+	*/
 	fmt.Println("Grabbing labels for board and saving as Markdown BoardLabels.md")
 	labels, err := board.GetLabels(trello.Defaults())
 	if err != nil {
@@ -59,8 +67,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 	}
 
-	// Get all cards (open unless -a flag is set which includes archived)
-	// ### NEED TO HANDLE SPECIFIC LABEL ID REQUESTS
+	/*
+		Get all cards (open unless -a flag is set which includes archived)
+	*/
+	// ### STILL NEED TO HANDLE SPECIFIC LABEL ID REQUESTS FEATURE
 	if config.ARGS.Archived {
 		cards, err = board.GetCards(trello.Arguments{"filter": "all"})
 	} else {
@@ -102,7 +112,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		dirCreate(cardPath)
 
-		// Card Level Data
+		/*
+			Card Level Data
+		*/
 		fmt.Println("Dumping card:", card.Name)
 		// Create markdown file for card description
 		err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), 0644)
@@ -110,7 +122,11 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			panic(err)
 		}
 
-		// Save Attachments
+		/*
+			Save Card Attachments
+			- Download file attachments
+			- Save URL attachments in a text markdown file
+		*/
 		// 	check "cover" flag to see if attachment is a cover photo and tag it in the name
 		attachments, err := card.GetAttachments(trello.Defaults())
 		if err != nil {
@@ -155,15 +171,49 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 
 		/*
+			Save Card Checklists
+			- Create markdown file for each checklist
+			- Include checked items in markdown
+		*/
+
+		cardNumber = 0
+		for _, checkList := range card.Checklists {
+			checklistName := SanitizePathName(checkList.Name)
+			for _, item := range checkList.CheckItems {
+				// If item is checked, append [x] to the name, otherwise append [ ]
+				if item.State == "complete" {
+					buff.WriteString(fmt.Sprintf("- [x] %s\n", item.Name))
+				} else {
+					buff.WriteString(fmt.Sprintf("- [ ] %s\n", item.Name))
+				}
+			}
+
+			fullpath := filepath.Join(cardPath, checklistName+".md")
+			if _, err := os.Stat(fullpath); err == nil {
+				// If file already exists, append a number to the filename
+				cardNumber++
+				fullpath = filepath.Join(cardPath, checklistName+" "+strconv.Itoa(cardNumber)+".md")
+			}
+
+			// Create markdown file for card checklists
+			err = os.WriteFile(fullpath, buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		/*
 			In Card Directory store:
-				Card Description markdown
-				Card Checklist markdown (including properly checked items)
-				Directory called attachments that stores:
-					File attachments (tag cover photo in name)
-					Links
-				Card Comments markdown
-				Card Labels text file
-				Card History in text file
+				~~ Card Description markdown
+				~~ Card Checklist markdown (including properly checked items)
+				~~ Directory called attachments that stores:
+					~~ File attachments (tag cover photo in name)
+					~~ Links
+				Card Checklists into markdown file
+				Card Comments into markdown file
+				Card Users into markdown file
+				Card Labels markdown file
+				Card History in markdown file
 		*/
 	}
 }

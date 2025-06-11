@@ -224,7 +224,7 @@ func SanitizePathName(name string) string {
 	return sanitized
 }
 
-// downLoadFile - Download a remote file to the local drive for attachments, etc
+// downLoadFile - Download a remote file to the local drive for certain types of attachments, like board background images
 func downLoadFile(fileURL string, localFilePath string) error {
 
 	var (
@@ -275,8 +275,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 	return nil
 }
 
-// downloadFileAuthHeader - download file from URL to local file system but provide a Auth Header Token
-// Format https://api.trello.com/1/cards/{idCard}/attachments/{idAttachment}/download/{attachmentFileName}
+// downloadFileAuthHeader - download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
 	u, err := url.Parse(fileURL)
