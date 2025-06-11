@@ -175,12 +175,16 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			- Create markdown file for each checklist
 			- Include checked items in markdown
 		*/
-
 		cardNumber = 0
-		fmt.Println("Found", len(card.Checklists), "checklists for card", card.Name)
-		for _, checkList := range card.Checklists {
-			checklistName := SanitizePathName(checkList.Name)
-			for _, item := range checkList.CheckItems {
+		fmt.Println("Found", len(card.IDCheckLists), "checklists for card", card.Name)
+
+		for _, checkList := range card.IDCheckLists {
+			// Get checklist data
+			args := trello.Arguments{"checkItems": "all"}
+			checklist, err := client.GetChecklist(checkList, args)
+
+			checklistName := SanitizePathName(checklist.Name)
+			for _, item := range checklist.CheckItems {
 				// If item is checked, append [x] to the name, otherwise append [ ]
 				if item.State == "complete" {
 					buff.WriteString(fmt.Sprintf("- [x] %s\n", item.Name))
