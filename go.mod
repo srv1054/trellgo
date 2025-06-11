@@ -5,6 +5,7 @@ go 1.24.1
 require (
 	github.com/adlio/trello v1.12.0
 	github.com/jedib0t/go-pretty/v6 v6.6.7
+	github.com/joho/godotenv v1.5.1
 )
 
 require (

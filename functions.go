@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -14,6 +15,7 @@ import (
 	"github.com/adlio/trello"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/joho/godotenv"
 )
 
 type ARGS struct {
@@ -84,9 +86,25 @@ func getCLIArgs() (config ARGS) {
 // getOSENV - Get Trello API Key from OS Environment
 func getOSENV() (config ENV) {
 
+	// Load vars in dotenv file if it exists (preferred method)
+	if _, err := os.Stat(".env"); err == nil {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file, it exists but is not readable")
+		}
+	} else {
+		fmt.Println("No .env file found, using OS Environment variables")
+	}
+
 	config.TRELLOAPIKEY = os.Getenv("TRELLGO_APIKEY")
 	config.TRELLOAPITOK = os.Getenv("TRELLGO_APITOK")
 	config.TRELLOAPIURL = os.Getenv("TRELLGO_APIURL")
+
+	if config.TRELLOAPIKEY == "" || config.TRELLOAPITOK == "" {
+		fmt.Println("Error: No Trello API Key or Token provided in OS Environment")
+		fmt.Println("Exiting...")
+		os.Exit(1)
+	}
 
 	return config
 }
@@ -103,7 +121,7 @@ func printHelp(version string) {
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
-	fmt.Printf("  -v\t\ttPrints version and exits\n")
+	fmt.Printf("  -v\t\tPrints version and exits\n")
 	fmt.Println()
 	fmt.Printf("Example: trellgo -b c52d11s -l ff3sg135 -s '/path/to/here'\n")
 	fmt.Printf("Example: trellgo -labels")
