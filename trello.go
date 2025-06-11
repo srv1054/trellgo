@@ -250,6 +250,35 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 
 		/*
+			Save Card Users
+		*/
+		fmt.Println("Grabbing users for card:", card.Name)
+		members, err := card.GetMembers()
+		if err != nil {
+			fmt.Println("Error: Unable to get members for card ID", card.ID)
+			continue
+		}
+
+		if len(members) > 0 {
+			// Clear the old Bytes Buffer
+			buff.Reset()
+			fmt.Println("Found", len(members), "members for card", card.Name)
+			for _, member := range members {
+				// Format member with name and ID
+				buff.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
+			}
+			// Create markdown file for card users
+			userFileName := cardPath + "/CardUsers.md"
+			err = os.WriteFile(userFileName, buff.Bytes(), 0644)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Created users markdown file:", userFileName)
+		} else {
+			fmt.Println("No users found on card", card.Name)
+		}
+
+		/*
 			In Card Directory store:
 				~~ Card Description markdown
 				~~ Card Checklist markdown (including properly checked items)
@@ -257,7 +286,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 					~~ File attachments (tag cover photo in name)
 					~~ Links
 				~~ Card Checklists into markdown file
-				Card Comments into markdown file
+				~~ Card Comments into markdown file
 				Card Users into markdown file
 				Card Labels markdown file
 				Card History in markdown file
