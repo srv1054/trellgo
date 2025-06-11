@@ -179,11 +179,20 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		fmt.Println("Found", len(card.IDCheckLists), "checklists for card", card.Name)
 
 		for _, checkList := range card.IDCheckLists {
+			// Clear the old Bytes Buffer
+			buff.Reset()
+
 			// Get checklist data
 			args := trello.Arguments{"checkItems": "all"}
 			checklist, err := client.GetChecklist(checkList, args)
+			if err != nil {
+				fmt.Println("Error: Unable to get checklist data for checklist ID", checkList)
+				continue
+			}
 
 			checklistName := SanitizePathName(checklist.Name)
+			fmt.Println("Processing checklist:", checklistName)
+
 			for _, item := range checklist.CheckItems {
 				// If item is checked, append [x] to the name, otherwise append [ ]
 				if item.State == "complete" {
