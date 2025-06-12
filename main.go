@@ -24,7 +24,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.08"
+	version = "0.1.09"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -100,5 +100,5 @@ func main() {
 	dumpABoard(config, board, client)
 
 	fmt.Println("Processing Complete")
-
+	fmt.Println("Your board backup is in the directory:", config.ARGS.StoragePath)
 }

@@ -133,9 +133,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		os.Exit(0)
 	} else {
 		if len(cards) > 1 {
-			fmt.Printf("Found %d cards on board %s\n", len(cards), board.Name)
+			fmt.Printf("Found %d cards on board %s\n. Processing Cards, please wait...", len(cards), board.Name)
 		} else {
-			fmt.Printf("Found %d card on board %s\n", len(cards), board.Name)
+			fmt.Printf("Found %d card on board %s\n. Processing this card, please wait...", len(cards), board.Name)
 		}
 	}
 
