@@ -424,7 +424,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		/*			Save Card Cover Image
 					- Download cover image if exists
 					- Save it in the card directory
-					- If cover is a color, save as a text file with the color name
+					- If cover is a color, save as a markdown file with the color name
 		*/
 		if card.Cover == nil {
 			fmt.Println("No cover set on card", card.Name)
@@ -436,8 +436,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		// IMAGE COVER: Trello will populate IDAttachment (or IDUploadedBackground)
 		//   if there’s an image; the Scaled slice contains URLs for each size variant.
 		if cover.IDAttachment != "" || cover.IDUploadedBackground != "" {
+			fmt.Println("Cover image found for card", card.Name)
+			fmt.Println("Cover IDAttachment:", cover.IDAttachment)
+			fmt.Println("Cover IDUploadedBackground:", cover.IDUploadedBackground)
+
 			// pick a URL from the Scaled variants. Prefer the un-scaled (original) if it exists
 			var imgURL string
+			fmt.Printf("%+v\n", cover.Scaled)
 			for _, v := range cover.Scaled {
 				if !v.Scaled {
 					imgURL = v.URL
@@ -465,6 +470,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Error writing cover color for", card.Name, ":", err)
 			}
 		}
+
+		os.Exit(1)
 
 		/* ##### SEE CHATGPT DISCUSSION ON THIS, TO TRY NEXT #####
 		/*if card.Cover != nil {
