@@ -98,7 +98,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	/*
 		Get all cards
 		- If -a flag is set, include archived cards
-		- If -l flag is set, only include cards with the specified label ID
+		- If -l flag is set, only include cards with the specified label NAME (not Label ID)
 			- Does not work with -a flag
 		- If -split flag is set, archived cards will be moved to an ARCHIVED directory
 	*/
@@ -113,6 +113,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			os.Exit(1)
 		}
 	} else {
+		// If no specific label ID is provided, get all cards based on the -a flag
 		if config.ARGS.Archived {
 			cards, err = board.GetCards(trello.Arguments{"filter": "all"})
 		} else {
@@ -128,6 +129,12 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	if len(cards) == 0 {
 		fmt.Println("No cards found for board", board.Name)
 		os.Exit(0)
+	} else {
+		if len(cards) > 1 {
+			fmt.Printf("Found %d cards on board %s\n", len(cards), board.Name)
+		} else {
+			fmt.Printf("Found %d card on board %s\n", len(cards), board.Name)
+		}
 	}
 
 	// Loop through cards and dump to directory structure

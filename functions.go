@@ -128,7 +128,7 @@ func printHelp(version string) {
 	fmt.Println("Options:")
 	fmt.Printf("  -a\t\tInclude archived cards in dump\n")
 	fmt.Printf("  -b\t\tTrello board to dump BoardID (REQUIRED)\n")
-	fmt.Printf("  -l\t\tOnly include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)\n")
+	fmt.Printf("  -l\t\tOnly include cards with this label NAME (Does not work with -a flag. Requires NAME of label \"in quotes\", not ID)\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
