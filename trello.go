@@ -93,6 +93,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	} else {
 		var memberBuf bytes.Buffer
 		for _, member := range members {
+			if member == nil {
+				continue
+			}
 			memberBuf.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
 		}
 		// Write buffer content to a file
@@ -220,6 +223,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			}
 
 			for _, a := range attachments {
+				if a == nil {
+					continue
+				}
 
 				if a.IsUpload {
 					// Download
@@ -274,6 +280,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		dirCreate(cardPath + "/checklists")
 
 		for _, checkList := range card.IDCheckLists {
+
+			if checkList == "" {
+				continue
+			}
 			// Clear the old Bytes Buffer
 			buff.Reset()
 
@@ -336,6 +346,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(comments), "comments for card", card.Name)
 			}
 			for _, comment := range comments {
+				if comment == nil {
+					continue
+				}
 				// Format comment with author and date
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s\n", comment.MemberCreator.FullName, comment.Date.Format("2006-01-02 15:04:05"), comment.Data.Text))
 			}
@@ -377,6 +390,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(members), "members for card", card.Name)
 			}
 			for _, member := range members {
+				if member == nil {
+					continue
+				}
 				// Format member with name and ID
 				buff.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
 			}
@@ -417,6 +433,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(cardWithLabels.Labels), "labels for card", card.Name)
 			}
 			for _, label := range cardWithLabels.Labels {
+				if label == nil {
+					continue
+				}
 				// Format label with name and ID
 				buff.WriteString(fmt.Sprintf("**%s** - %s (%s)\n", label.Name, label.Color, label.ID))
 			}
@@ -459,6 +478,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(history), "history actions for card", card.Name)
 			}
 			for _, action := range history {
+				if action == nil {
+					continue
+				}
 				// Format action with type, date, and member
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s - %s\n", action.Type, action.Date.Format("2006-01-02 15:04:05"), action.MemberCreator.FullName, action.Data.Text))
 			}

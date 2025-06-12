@@ -180,6 +180,9 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 	t.AppendHeader(table.Row{"Label Name", "Label Color", "Label UID"})
 
 	for _, label := range labels {
+		if label == nil {
+			continue
+		}
 		if label.Color == "" {
 			label.Color = "No Color"
 		}

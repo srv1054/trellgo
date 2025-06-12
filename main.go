@@ -24,7 +24,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.15"
+	version = "0.1.16"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
