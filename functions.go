@@ -72,13 +72,6 @@ func getCLIArgs() (config ARGS, boards []string) {
 		os.Exit(0)
 	}
 
-	// Check for required flag of Board ID
-	/*if *BoardID == "" {
-		fmt.Println("Error: No Board ID provided. REQUIRED")
-		printHelp(version)
-		os.Exit(1)
-	} */
-
 	// If no board ID is provided, check if stdin is piped
 	boards, err := getBoardIDs(*BoardID, os.Stdin)
 	if err != nil {

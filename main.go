@@ -25,7 +25,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.2.00"
+	version = "0.2.01"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stin Pipe input
@@ -60,7 +60,7 @@ func main() {
 			fmt.Printf("\n\nLabel IDs for Board: %s (%s)\n\n", board.Name, board.ID)
 			prettyPrintLabels(labels, false)
 
-			os.Exit(0)
+			continue
 		}
 
 		/* Process Card Counts Request */
@@ -87,17 +87,22 @@ func main() {
 			t.Render()
 
 			fmt.Println()
-			os.Exit(0)
+
+			continue
 		}
 
 		/* Process board data */
-		fmt.Println()
-		fmt.Println("Processing Board Name:", board.Name)
-		dumpABoard(config, board, client)
+		if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
+			fmt.Println()
+			fmt.Println("Processing Board Name:", board.Name)
+			dumpABoard(config, board, client)
 
-		fmt.Println()
-		fmt.Println("Processing Complete")
+			fmt.Println()
+			fmt.Println("Processing Complete")
+		}
 	}
 
-	fmt.Println("Your board backups are in the directory:", config.ARGS.StoragePath)
+	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
+		fmt.Println("Your board backups are in the directory:", config.ARGS.StoragePath)
+	}
 }
