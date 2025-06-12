@@ -11,10 +11,11 @@ import (
 
 // GLobal
 var (
-	version  string
-	ListLoud bool
-	config   Config
-	client   *trello.Client
+	version      string
+	listOfBoards []string
+	ListLoud     bool
+	config       Config
+	client       *trello.Client
 )
 
 type Config struct {
@@ -24,83 +25,91 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.17"
+	version = "0.2.02"
 
 	// Load CLI arguments and OS ENV
-	config.ARGS = getCLIArgs()
+	// This also must handle stin Pipe input
+	config.ARGS, listOfBoards = getCLIArgs()
 	config.ENV = getOSENV()
 
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
 
-	// Process Label List Request
-	if config.ARGS.ListLabelIDs {
-
-		board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
-		if err != nil {
-			fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
-			os.Exit(1)
-		}
-
-		labels, err := board.GetLabels(trello.Defaults())
-		if err != nil {
-			fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
-			os.Exit(1)
-		}
-
-		fmt.Printf("\n\nLabel IDs for Board: %s (%s)\n\n", board.Name, board.ID)
-		prettyPrintLabels(labels, false)
-
-		os.Exit(0)
-	}
-
-	// Process Card Counts Request
+	// Message this once outside the loop, rather than for each board on multiple board input
 	if config.ARGS.ListTotalCards {
+		fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
+	}
 
-		board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
+	// Range through board IDs.  Came in via CLI args or stdin pipe
+	for _, boardID := range listOfBoards {
+
+		// validate board ID by getting the board data
+		board, err := client.GetBoard(boardID, trello.Defaults())
 		if err != nil {
-			fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
-			os.Exit(1)
+			fmt.Println("Error: Unable to get board data for board ID", boardID)
+			fmt.Println(err)
+
+			continue
 		}
 
-		fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
-		totalCards, _ := board.GetCards(trello.Arguments{"filter": "all"})
-		openCards, _ := board.GetCards(trello.Arguments{"filter": "open"})
-		closedCards, _ := board.GetCards(trello.Arguments{"filter": "closed"})
-		visibleCards, _ := board.GetCards(trello.Arguments{"filter": "visible"}) // Visible cards are open and not archived
+		/* Process Label List Request */
+		if config.ARGS.ListLabelIDs {
 
-		t := table.NewWriter()
-		t.SetOutputMirror(os.Stdout)
-		t.AppendRow([]interface{}{"Total Cards", len(totalCards)})
-		t.AppendSeparator()
-		t.AppendRow([]interface{}{"Open Cards", len(openCards)})
-		t.AppendSeparator()
-		t.AppendRow([]interface{}{"Archived Cards", len(closedCards)})
-		t.AppendSeparator()
-		t.AppendRow([]interface{}{"Visible Cards", len(visibleCards)})
+			labels, err := board.GetLabels(trello.Defaults())
+			if err != nil {
+				fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", boardID)
+				fmt.Println(err)
+				continue
+			}
 
-		t.SetStyle(table.StyleLight)
-		t.Style().Color.Header = text.Colors{text.FgHiGreen, text.Bold}
-		t.Render()
+			fmt.Printf("\n\nLabel IDs for Board: %s (%s)\n\n", board.Name, board.ID)
+			prettyPrintLabels(labels, false)
 
-		fmt.Println()
-		os.Exit(0)
+			continue
+		}
+
+		/* Process Card Counts Request */
+		if config.ARGS.ListTotalCards {
+
+			totalCards, _ := board.GetCards(trello.Arguments{"filter": "all"})
+			openCards, _ := board.GetCards(trello.Arguments{"filter": "open"})
+			closedCards, _ := board.GetCards(trello.Arguments{"filter": "closed"})
+			visibleCards, _ := board.GetCards(trello.Arguments{"filter": "visible"}) // Visible cards are open and not archived
+
+			t := table.NewWriter()
+			t.SetOutputMirror(os.Stdout)
+			t.AppendRow([]interface{}{"Total Cards", len(totalCards)})
+			t.AppendSeparator()
+			t.AppendRow([]interface{}{"Open Cards", len(openCards)})
+			t.AppendSeparator()
+			t.AppendRow([]interface{}{"Archived Cards", len(closedCards)})
+			t.AppendSeparator()
+			t.AppendRow([]interface{}{"Visible Cards", len(visibleCards)})
+
+			t.SetStyle(table.StyleLight)
+			t.Style().Color.Header = text.Colors{text.FgHiGreen, text.Bold}
+
+			fmt.Printf("\n\nCard Counts for Board: %s (%s)\n\n", board.Name, board.ID)
+
+			t.Render()
+
+			fmt.Println()
+
+			continue
+		}
+
+		/* Process board data */
+		if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
+			fmt.Println()
+			fmt.Println("Processing Board Name:", board.Name)
+			dumpABoard(config, board, client)
+
+			fmt.Println()
+			fmt.Println("Processing Complete")
+		}
 	}
 
-	// Process board data
-	// validate board ID by getting the board data
-	board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
-	if err != nil {
-		fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)
-		fmt.Println(err)
-		os.Exit(1)
+	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
+		fmt.Println("Your board backups are in the directory:", config.ARGS.StoragePath)
 	}
-
-	fmt.Println()
-	fmt.Println("Processing Board Name:", board.Name)
-	dumpABoard(config, board, client)
-
-	fmt.Println()
-	fmt.Println("Processing Complete")
-	fmt.Println("Your board backup is in the directory:", config.ARGS.StoragePath)
 }

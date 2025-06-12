@@ -64,7 +64,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	}
 	labels, err := board.GetLabels(trello.Defaults())
 	if err != nil {
-		fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
+		fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", board.ID)
 	} else {
 
 		buf := prettyPrintLabels(labels, true)
@@ -122,7 +122,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 		cards, err = client.SearchCards(query, trello.Defaults())
 		if err != nil {
-			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID, "with label ID", config.ARGS.LabelID)
+			fmt.Println("Error: Unable to get card data for board ID", board.ID, "with label ID", config.ARGS.LabelID)
 			os.Exit(1)
 		}
 	} else {
@@ -133,7 +133,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			cards, err = board.GetCards(trello.Arguments{"filter": "open"})
 		}
 		if err != nil {
-			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID)
+			fmt.Println("Error: Unable to get card data for board ID", board.ID)
 			os.Exit(1)
 		}
 	}
