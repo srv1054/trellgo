@@ -287,7 +287,7 @@ func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string,
 
 	// Extract filename from the URL
 	fileName := path.Base(u.Path)
-	fullFile := localFilePath + fileName
+	fullFile := path.Join(localFilePath, fileName)
 
 	fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", fullFile)
 
