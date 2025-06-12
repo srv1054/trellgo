@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -25,7 +26,6 @@ type ARGS struct {
 	ListTotalCards   bool
 	SeparateArchived bool
 	StoragePath      string
-	BoardID          string
 	LabelID          string
 }
 
@@ -36,12 +36,12 @@ type ENV struct {
 }
 
 // getCLIArgs - Get CLI arguments and flags
-func getCLIArgs() (config ARGS) {
+func getCLIArgs() (config ARGS, boards []string) {
 
 	var (
 		// CLI Flags
 		Archived         = flag.Bool("a", false, "Include archived cards in dump")
-		BoardID          = flag.String("b", "", "Trello board to dump Unique Identifier")
+		BoardID          = flag.String("b", "", "Trello board to dump Unique Identifier (or PIPE (|) IDs in one per line)")
 		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
 		LabelID          = flag.String("l", "", "Only include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)")
 		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
@@ -59,7 +59,6 @@ func getCLIArgs() (config ARGS) {
 
 	// Set config values
 	config.Archived = *Archived
-	config.BoardID = *BoardID
 	config.LabelID = *LabelID
 	config.ListLabelIDs = *ListLabelIDs
 	config.ListTotalCards = *ListTotalCards
@@ -74,9 +73,17 @@ func getCLIArgs() (config ARGS) {
 	}
 
 	// Check for required flag of Board ID
-	if *BoardID == "" {
+	/*if *BoardID == "" {
 		fmt.Println("Error: No Board ID provided. REQUIRED")
 		printHelp(version)
+		os.Exit(1)
+	} */
+
+	// If no board ID is provided, check if stdin is piped
+	boards, err := getBoardIDs(*BoardID, os.Stdin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n\n", err)
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -93,7 +100,7 @@ func getCLIArgs() (config ARGS) {
 		os.Exit(1)
 	}
 
-	return config
+	return config, boards
 }
 
 // getOSENV - Get Trello API Key from OS Environment
@@ -122,6 +129,41 @@ func getOSENV() (config ENV) {
 	return config
 }
 
+/*
+getBoardIDs - Get Board IDs from CLI flag or stdin
+If the -b flag is used, it will return that ID.
+*/
+func getBoardIDs(boardFlag string, stdin io.Reader) ([]string, error) {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	var ids []string
+	// if stdin is piped (not a terminal), read lines
+	if fi.Mode()&os.ModeCharDevice == 0 {
+		scanner := bufio.NewScanner(stdin)
+		for scanner.Scan() {
+			if line := scanner.Text(); line != "" {
+				ids = append(ids, line)
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("reading stdin: %w", err)
+		}
+	}
+
+	// if nothing came in on stdin, use the -b flag
+	if len(ids) == 0 {
+		if boardFlag == "" {
+			return nil, fmt.Errorf("no board IDs provided (pipe them in or use -b)")
+		}
+		ids = append(ids, boardFlag)
+	}
+
+	return ids, nil
+}
+
 // printHelp - prints help menu when -h is used on CLI
 func printHelp(version string) {
 	fmt.Printf("\ttrellgo v%s by srv1054 (github.com/srv1054/trellgo)\n", version)
@@ -129,7 +171,7 @@ func printHelp(version string) {
 	fmt.Println("Usage: ./trellgo [options]")
 	fmt.Println("Options:")
 	fmt.Printf("  -a\t\tInclude archived cards in dump\n")
-	fmt.Printf("  -b\t\tTrello board to dump BoardID (REQUIRED)\n")
+	fmt.Printf("  -b\t\tTrello board to dump BoardID or PIPE (|) IDs in one per line. (REQUIRED if not piping from STDIN)\n")
 	fmt.Printf("  -l\t\tOnly include cards with this label NAME (Does not work with -a flag. Requires NAME of label \"in quotes\", not ID)\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -loud\tEnable more verbose output\n")
