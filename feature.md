@@ -1,3 +1,5 @@
+# Please use the Github ISSUES tab to create issues instead of using `feature.md`
+
 ## Things to add and do
 
 - [x] Update console logging output, make that cleaner, more configurable
