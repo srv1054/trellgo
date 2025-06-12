@@ -24,7 +24,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.12"
+	version = "0.1.14"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -96,6 +96,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println()
 	fmt.Println("Processing Board Name:", board.Name)
 	dumpABoard(config, board, client)
 

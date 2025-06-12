@@ -57,7 +57,11 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	/*
 		Create markdown list of labels and their names/colors
 	*/
-	fmt.Println("Grabbing labels for board and saving as Markdown BoardLabels.md")
+	if ListLoud {
+		fmt.Println("Grabbing labels for board and saving as Markdown BoardLabels.md")
+	} else {
+		fmt.Println("Grabbing labels")
+	}
 	labels, err := board.GetLabels(trello.Defaults())
 	if err != nil {
 		fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", config.ARGS.BoardID)
@@ -78,7 +82,11 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		- Create markdown file for board members
 		- Include member name and ID
 	*/
-	fmt.Println("Grabbing members for board:", board.Name)
+	if ListLoud {
+		fmt.Println("Grabbing members for board:", board.Name)
+	} else {
+		fmt.Println("Grabbing board members")
+	}
 	members, err := board.GetMembers()
 	if err != nil {
 		fmt.Println("Error: Unable to get members for board ID", board.ID)
@@ -133,9 +141,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		os.Exit(0)
 	} else {
 		if len(cards) > 1 {
-			fmt.Printf("Found %d cards on board %s.\nProcessing Cards, please wait...\n", len(cards), board.Name)
+			fmt.Printf("Found %d cards to process.\nPlease wait...\n", len(cards))
 		} else {
-			fmt.Printf("Found %d card on board %s.\nProcessing this card, please wait...\n", len(cards), board.Name)
+			fmt.Printf("Found %d card to processs.\nPlease wait...\n", len(cards))
 		}
 	}
 
@@ -146,7 +154,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		// if we are in non-verbose mode, show a card progress counter
 		if !ListLoud {
-			fmt.Printf("\rProcessed %3d/%3d", x+1, len(cards))
+			fmt.Printf("\rProcessing %3d/%3d", x+1, len(cards))
 		}
 
 		// find cards list name
