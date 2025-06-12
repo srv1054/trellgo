@@ -133,14 +133,20 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		os.Exit(0)
 	} else {
 		if len(cards) > 1 {
-			fmt.Printf("Found %d cards on board %s\n. Processing Cards, please wait...", len(cards), board.Name)
+			fmt.Printf("Found %d cards on board %s.\nProcessing Cards, please wait...\n", len(cards), board.Name)
 		} else {
-			fmt.Printf("Found %d card on board %s\n. Processing this card, please wait...", len(cards), board.Name)
+			fmt.Printf("Found %d card on board %s.\nProcessing this card, please wait...\n", len(cards), board.Name)
 		}
 	}
 
+	fmt.Println() // blank line to make counter output cleaner
+
 	// Loop through cards and dump to directory structure
-	for _, card := range cards {
+	for x, card := range cards {
+
+		if !ListLoud {
+			fmt.Printf("\rProcessed %3d/%3d", x+1, len(cards))
+		}
 
 		// find cards list name
 		list, err := client.GetList(card.IDList, trello.Defaults())
@@ -538,5 +544,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			}
 		}
 
+	}
+
+	if !ListLoud {
+		fmt.Println() // New line after running counter
 	}
 }
