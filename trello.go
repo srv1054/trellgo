@@ -435,42 +435,14 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		*/
 		if card.Cover == nil {
 			fmt.Println("No cover set on card", card.Name)
-			return
-		}
-
-		cover := card.Cover
-
-		if cover.Color != "" {
+		} else if card.Cover.Color != "" {
 			colorFile := filepath.Join(cardPath, "CardCoverColor.md")
-			if err := os.WriteFile(colorFile, []byte(cover.Color), 0644); err != nil {
+			if err := os.WriteFile(colorFile, []byte(card.Cover.Color), 0644); err != nil {
 				fmt.Println("Error writing cover color for", card.Name, ":", err)
 			}
+		} else {
+			fmt.Println("Cover is an image, already downloaded in attachments for card", card.Name)
 		}
 
-		os.Exit(1)
-
-		/* ##### SEE CHATGPT DISCUSSION ON THIS, TO TRY NEXT #####
-		/*if card.Cover != nil {
-			if card.Cover.IsImage() {
-				// Download cover image
-				url := card.Cover.GetImageURL()
-				localFilePath := filepath.Join(cardPath, "CardCover-")
-				err := downLoadFile(url, localFilePath)
-				if err != nil {
-					fmt.Println("Error: Unable to download cover image for card", card.Name)
-					fmt.Println(err)
-				}
-			} else if card.Cover.IsColor() {
-				// Save cover color as a text file
-				colorFileName := filepath.Join(cardPath, "CardCoverColor.md")
-				err := os.WriteFile(colorFileName, []byte(card.Cover.Color), 0644)
-				if err != nil {
-					fmt.Println("Error: Unable to save cover color for card", card.Name)
-					fmt.Println(err)
-				}
-			}
-		} else {
-			fmt.Println("No cover found for card", card.Name)
-		}*/
 	}
 }
