@@ -303,7 +303,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if _, err := os.Stat(fullpath); err == nil {
 				// If file already exists, append a number to the filename
 				cardNumber++
-				fullpath = filepath.Join(cardPath, checklistName+" "+strconv.Itoa(cardNumber)+".md")
+				fullpath = filepath.Join(cardPath, "checklists", checklistName+" "+strconv.Itoa(cardNumber)+".md")
 			}
 
 			if ListLoud {
