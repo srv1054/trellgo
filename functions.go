@@ -280,16 +280,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 // downloadFileAuthHeader - download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
-	u, err := url.Parse(fileURL)
-	if err != nil {
-		log.Fatalf("invalid URL: %v", err)
-	}
-
-	// Extract filename from the URL
-	fileName := path.Base(u.Path)
-	fullFile := path.Join(localFilePath, fileName)
-
-	fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", fullFile)
+	fmt.Println("Downloading file from URL:", fileURL, "to local path:", localFilePath)
 
 	// Create a new HTTP request with Authorization header
 	req, err := http.NewRequest("GET", fileURL, nil)
@@ -314,7 +305,7 @@ func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string,
 	}
 
 	// Create the file
-	out, err := os.Create(fullFile)
+	out, err := os.Create(localFilePath)
 	if err != nil {
 		return err
 	}

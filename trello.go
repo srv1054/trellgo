@@ -169,8 +169,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				if a.IsUpload {
 					// Download
 					filePath := filepath.Join(cardPath, "attachments")
-					fmt.Println("Card Cover Value: ", card.Cover.IDAttachment)
-					fmt.Println("Attachment ID: ", a.ID)
+					if card.Cover.IDAttachment == a.ID {
+						// If this is the cover attachment, append "Cover" to the filename
+						filePath = filepath.Join(filePath, a.Name+" (Card Cover)")
+						fmt.Println("This is the cover attachment for card", card.Name, "downloading to", filePath)
+					} else {
+						filePath = filepath.Join(filePath, a.Name)
+					}
 					// Format https://api.trello.com/1/cards/{idCard}/attachments/{idAttachment}/download/{attachmentFileName}
 					authURL := fmt.Sprintf("https://api.trello.com/1/cards/%s/attachments/%s/download/%s", card.ID, a.ID, a.Name)
 					err := downloadFileAuthHeader(authURL, filePath, config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
@@ -423,10 +428,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			_ = os.WriteFile(startFileName, nil, 0644)
 		}
 
-		/*			Save Card Cover Image
-					- Download cover image if exists
-					- Save it in the card directory
-					- If cover is a color, save as a markdown file with the color name
+		/*
+			Save Card Cover
+			- If cover is an image, it was already downloaded in the attachments section and labeled with (Card Cover)
+			- If cover is a color, save as a markdown file with the color name
 		*/
 		if card.Cover == nil {
 			fmt.Println("No cover set on card", card.Name)
@@ -435,38 +440,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		cover := card.Cover
 
-		// IMAGE COVER: Trello will populate IDAttachment (or IDUploadedBackground)
-		//   if there’s an image; the Scaled slice contains URLs for each size variant.
-		if cover.IDAttachment != "" || cover.IDUploadedBackground != "" {
-			fmt.Println("Cover image found for card", card.Name)
-			fmt.Println("Cover IDAttachment:", cover.IDAttachment)
-			fmt.Println("Cover IDUploadedBackground:", cover.IDUploadedBackground)
-
-			// pick a URL from the Scaled variants. Prefer the un-scaled (original) if it exists
-			var imgURL string
-			fmt.Printf("%+v\n", cover.Scaled)
-			for _, v := range cover.Scaled {
-				if !v.Scaled {
-					imgURL = v.URL
-					break
-				}
-			}
-			if imgURL == "" && len(cover.Scaled) > 0 {
-				// fallback to the first one if no original variant
-				imgURL = cover.Scaled[0].URL
-			}
-
-			if imgURL == "" {
-				fmt.Println("no scaled image URL available for cover on", card.Name)
-			} else {
-				fmt.Println("Downloading cover image for", card.Name, "from", imgURL)
-				if err := downLoadFile(imgURL, filepath.Join(cardPath, "CardCover.jpg")); err != nil {
-					fmt.Println("download error:", err)
-				}
-			}
-
-			// COLORED COVER: if Color is non-empty you have a solid cover color
-		} else if cover.Color != "" {
+		if cover.Color != "" {
 			colorFile := filepath.Join(cardPath, "CardCoverColor.md")
 			if err := os.WriteFile(colorFile, []byte(cover.Color), 0644); err != nil {
 				fmt.Println("Error writing cover color for", card.Name, ":", err)
