@@ -24,6 +24,7 @@ type ARGS struct {
 	ListLabelIDs     bool
 	ListTotalCards   bool
 	SeparateArchived bool
+	ListLoud         bool
 	StoragePath      string
 	BoardID          string
 	LabelID          string
@@ -45,6 +46,7 @@ func getCLIArgs() (config ARGS) {
 		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
 		LabelID          = flag.String("l", "", "Only include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)")
 		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
+		ListLoud         = flag.Bool("loud", false, "Enable more verbose output")
 		StoragePath      = flag.String("s", "", "Root Level path to store board information")
 		SeparateArchived = flag.Bool("split", false, "Separate archived cards into their own directory")
 		ver              = flag.Bool("v", false, "Version Check")
@@ -64,6 +66,7 @@ func getCLIArgs() (config ARGS) {
 	config.ListTotalCards = *ListTotalCards
 	config.StoragePath = *StoragePath
 	config.SeparateArchived = *SeparateArchived
+	config.ListLoud = *ListLoud
 
 	// Handle -v version
 	if *ver {
@@ -130,10 +133,13 @@ func printHelp(version string) {
 	fmt.Printf("  -b\t\tTrello board to dump BoardID (REQUIRED)\n")
 	fmt.Printf("  -l\t\tOnly include cards with this label NAME (Does not work with -a flag. Requires NAME of label \"in quotes\", not ID)\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
+	fmt.Printf("  -loud\tEnable more verbose output\n")
 	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
 	fmt.Printf("  -split\tSeparate archived cards into their own directory (instead of mixed in and labeled with -ARCHIVED)\n")
 	fmt.Printf("  -v\t\tPrints version and exits\n")
+	fmt.Println()
+	fmt.Println("Console output is minimal by default, with high level messages.  Use -loud to enable more verbose output.  Errors always print to console.")
 	fmt.Println()
 	fmt.Printf("Example: trellgo -b c52d11s -l ff3sg135 -s '/path/to/here'\n")
 	fmt.Printf("Example: trellgo -b c52d11s -a -split -s '/path/to/here'\n")
