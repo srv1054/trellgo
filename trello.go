@@ -346,8 +346,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(comments), "comments for card", card.Name)
 			}
 			for _, comment := range comments {
-				if comment == nil {
-					continue
+				if comment.MemberCreator == nil || comment.MemberCreator.FullName == "" {
+					comment.MemberCreator = &trello.Member{FullName: "Unknown Member"}
 				}
 				// Format comment with author and date
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s\n", comment.MemberCreator.FullName, comment.Date.Format("2006-01-02 15:04:05"), comment.Data.Text))
@@ -390,8 +390,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fmt.Println("Found", len(members), "members for card", card.Name)
 			}
 			for _, member := range members {
-				if member == nil {
-					continue
+				if member == nil || member.FullName == "" {
+					member = &trello.Member{FullName: "Unknown Member", ID: "Unknown ID"}
 				}
 				// Format member with name and ID
 				buff.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
@@ -480,6 +480,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			for _, action := range history {
 				if action == nil {
 					continue
+				}
+				if action.MemberCreator == nil || action.MemberCreator.FullName == "" {
+					action.MemberCreator = &trello.Member{FullName: "Unknown Member"}
 				}
 				// Format action with type, date, and member
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s - %s\n", action.Type, action.Date.Format("2006-01-02 15:04:05"), action.MemberCreator.FullName, action.Data.Text))
