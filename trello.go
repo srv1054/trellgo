@@ -114,8 +114,21 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 
 		// create list directory
-		cleanListPath = SanitizePathName(list.Name)
-		dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath))
+		if list.Closed {
+			if config.ARGS.SeparateArchived {
+				cleanListPath = SanitizePathName(list.Name)
+				dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, "ARCHIVED", cleanListPath))
+			} else {
+				cleanListPath = SanitizePathName(list.Name + " (ARCHIVED)")
+				dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath))
+
+			}
+		} else {
+			cleanListPath = SanitizePathName(list.Name)
+			dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath))
+
+		}
+
 		// Create directory for card name
 		cleanCardPath = SanitizePathName(card.Name)
 		// If card is archived, append -ARCHIVED to the card name or move to ARCHIVED directory
