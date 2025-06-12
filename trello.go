@@ -169,6 +169,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				if a.IsUpload {
 					// Download
 					filePath := filepath.Join(cardPath, "attachments")
+					fmt.Println("Card Cover Value: ", card.Cover.IDAttachment)
+					fmt.Println("Card Cover Value 2: ", card.IDAttachmentCover)
 					// Format https://api.trello.com/1/cards/{idCard}/attachments/{idAttachment}/download/{attachmentFileName}
 					authURL := fmt.Sprintf("https://api.trello.com/1/cards/%s/attachments/%s/download/%s", card.ID, a.ID, a.Name)
 					err := downloadFileAuthHeader(authURL, filePath, config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
