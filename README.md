@@ -54,4 +54,5 @@ Be nice feature to add some sort of logging so you can get a quite console and g
   
 ### Notes
 Please improve and add features and fix bugs.  Just submit a Pull Request for review and we will merge things in!
+I should have started this project using Cobra...but I didn't, so there it is.  Future feature might be to move to Cobra
 
