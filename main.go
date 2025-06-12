@@ -11,9 +11,10 @@ import (
 
 // GLobal
 var (
-	version string
-	config  Config
-	client  *trello.Client
+	version  string
+	ListLoud bool
+	config   Config
+	client   *trello.Client
 )
 
 type Config struct {
@@ -23,7 +24,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.07"
+	version = "0.1.08"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()

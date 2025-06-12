@@ -106,7 +106,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	if config.ARGS.LabelID != "" {
 		fmt.Println("Searching for only cards with label ID:", config.ARGS.LabelID)
 		query := fmt.Sprintf("board:%s label:\"%s\" is:open", board.ID, config.ARGS.LabelID)
-		fmt.Println("Querying Trello API with:", query)
+		if ListLoud {
+			fmt.Println("Querying Trello API with:", query)
+		}
 		cards, err = client.SearchCards(query, trello.Defaults())
 		if err != nil {
 			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID, "with label ID", config.ARGS.LabelID)
@@ -172,7 +174,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		/*
 			Card Level Data
 		*/
-		fmt.Println("Dumping card:", card.Name)
+		if ListLoud {
+			fmt.Println("Dumping card:", card.Name)
+		}
 		// Create markdown file for card description
 		err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), 0644)
 		if err != nil {
@@ -196,7 +200,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		if len(attachments) > 0 {
 			dirCreate(cardPath + "/attachments")
-			fmt.Println(card.Name + " has  " + strconv.Itoa(len(attachments)) + " attachments")
+			if ListLoud {
+				fmt.Println(card.Name + " has  " + strconv.Itoa(len(attachments)) + " attachments")
+			}
 
 			for _, a := range attachments {
 
@@ -206,7 +212,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 					if card.Cover.IDAttachment == a.ID {
 						// If this is the cover attachment, append "Cover" to the filename
 						filePath = filepath.Join(filePath, a.Name+" (Card Cover)")
-						fmt.Println("This is the cover attachment for card", card.Name, "downloading to", filePath)
+						if ListLoud {
+							fmt.Println("This is the cover attachment for card", card.Name, "downloading to", filePath)
+						}
 					} else {
 						filePath = filepath.Join(filePath, a.Name)
 					}
@@ -231,7 +239,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				panic(err)
 			}
 		} else {
-			fmt.Println("No attachments found for card", card.Name)
+			if ListLoud {
+				fmt.Println("No attachments found for card", card.Name)
+			}
 			// Create an empty attachments directory if no attachments found
 			dirCreate(cardPath + "/attachments")
 		}
@@ -242,7 +252,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			- Include checked items in markdown
 		*/
 		cardNumber = 0
-		fmt.Println("Found", len(card.IDCheckLists), "checklists for card", card.Name)
+		if ListLoud {
+			fmt.Println("Found", len(card.IDCheckLists), "checklists for card", card.Name)
+		}
 
 		dirCreate(cardPath + "/checklists")
 
@@ -259,7 +271,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			}
 
 			checklistName := SanitizePathName(checklist.Name)
-			fmt.Println("Processing checklist:", checklistName)
+			if ListLoud {
+				fmt.Println("Processing checklist:", checklistName)
+			}
 
 			for _, item := range checklist.CheckItems {
 				// If item is checked, append [x] to the name, otherwise append [ ]
@@ -277,7 +291,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				fullpath = filepath.Join(cardPath, checklistName+" "+strconv.Itoa(cardNumber)+".md")
 			}
 
-			fmt.Println("Creating checklist markdown file:", fullpath)
+			if ListLoud {
+				fmt.Println("Creating checklist markdown file:", fullpath)
+			}
 			// Create markdown file for card checklists
 			err = os.WriteFile(fullpath, buff.Bytes(), 0644)
 			if err != nil {
@@ -290,7 +306,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			- Create markdown file for card comments
 			- Include comment author and date
 		*/
-		fmt.Println("Grabbing comments for card:", card.Name)
+		if ListLoud {
+			fmt.Println("Grabbing comments for card:", card.Name)
+		}
 		comments, err := card.GetActions(trello.Arguments{"filter": "commentCard"})
 		if err != nil {
 			fmt.Println("Error: Unable to get comments for card ID", card.ID)
@@ -299,7 +317,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if len(comments) > 0 {
 			// Clear the old Bytes Buffer
 			buff.Reset()
-			fmt.Println("Found", len(comments), "comments for card", card.Name)
+			if ListLoud {
+				fmt.Println("Found", len(comments), "comments for card", card.Name)
+			}
 			for _, comment := range comments {
 				// Format comment with author and date
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s\n", comment.MemberCreator.FullName, comment.Date.Format("2006-01-02 15:04:05"), comment.Data.Text))
@@ -310,9 +330,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created comments markdown file:", commentFileName)
+			if ListLoud {
+				fmt.Println("Created comments markdown file:", commentFileName)
+			}
 		} else {
-			fmt.Println("No comments found on card", card.Name)
+			if ListLoud {
+				fmt.Println("No comments found on card", card.Name)
+			}
 			// Create an empty comments markdown file if no comments found
 			// This is to ensure the file exists for future reference
 			commentFileName := cardPath + "/CardComments.md"
@@ -322,7 +346,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		/*
 			Save Card Users
 		*/
-		fmt.Println("Grabbing users for card:", card.Name)
+		if ListLoud {
+			fmt.Println("Grabbing users for card:", card.Name)
+		}
 		members, err := card.GetMembers()
 		if err != nil {
 			fmt.Println("Error: Unable to get members for card ID", card.ID)
@@ -332,7 +358,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if len(members) > 0 {
 			// Clear the old Bytes Buffer
 			buff.Reset()
-			fmt.Println("Found", len(members), "members for card", card.Name)
+			if ListLoud {
+				fmt.Println("Found", len(members), "members for card", card.Name)
+			}
 			for _, member := range members {
 				// Format member with name and ID
 				buff.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
@@ -343,9 +371,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created users markdown file:", userFileName)
+			if ListLoud {
+				fmt.Println("Created users markdown file:", userFileName)
+			}
 		} else {
-			fmt.Println("No users found on card", card.Name)
+			if ListLoud {
+				fmt.Println("No users found on card", card.Name)
+			}
 			// Create an empty users markdown file if no users found
 			// This is to ensure the file exists for future reference
 			userFileName := cardPath + "/CardUsers.md"
@@ -355,7 +387,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		/*
 			Save Card Labels
 		*/
-		fmt.Println("Grabbing labels for card:", card.Name)
+		if ListLoud {
+			fmt.Println("Grabbing labels for card:", card.Name)
+		}
 		cardWithLabels, err := client.GetCard(card.ID, trello.Arguments{"labels": "all"})
 		if err != nil {
 			fmt.Println("Error: Unable to get labels for card ID", card.ID)
@@ -364,7 +398,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if len(cardWithLabels.Labels) > 0 {
 			// Clear the old Bytes Buffer
 			buff.Reset()
-			fmt.Println("Found", len(cardWithLabels.Labels), "labels for card", card.Name)
+			if ListLoud {
+				fmt.Println("Found", len(cardWithLabels.Labels), "labels for card", card.Name)
+			}
 			for _, label := range cardWithLabels.Labels {
 				// Format label with name and ID
 				buff.WriteString(fmt.Sprintf("**%s** - %s (%s)\n", label.Name, label.Color, label.ID))
@@ -375,9 +411,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created labels markdown file:", labelFileName)
+			if ListLoud {
+				fmt.Println("Created labels markdown file:", labelFileName)
+			}
 		} else {
-			fmt.Println("No labels found on card", card.Name)
+			if ListLoud {
+				fmt.Println("No labels found on card", card.Name)
+			}
 			// Create an empty labels markdown file if no labels found
 			// This is to ensure the file exists for future reference
 			labelFileName := cardPath + "/CardLabels.md"
@@ -389,7 +429,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			- Create markdown file for card history
 			- Include action type, date, and member who performed the action
 		*/
-		fmt.Println("Grabbing history for card:", card.Name)
+		if ListLoud {
+			fmt.Println("Grabbing history for card:", card.Name)
+		}
 		history, err := card.GetActions(trello.Arguments{"filter": "all"})
 		if err != nil {
 			fmt.Println("Error: Unable to get history for card ID", card.ID)
@@ -398,7 +440,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if len(history) > 0 {
 			// Clear the old Bytes Buffer
 			buff.Reset()
-			fmt.Println("Found", len(history), "history actions for card", card.Name)
+			if ListLoud {
+				fmt.Println("Found", len(history), "history actions for card", card.Name)
+			}
 			for _, action := range history {
 				// Format action with type, date, and member
 				buff.WriteString(fmt.Sprintf("**%s** (%s): %s - %s\n", action.Type, action.Date.Format("2006-01-02 15:04:05"), action.MemberCreator.FullName, action.Data.Text))
@@ -409,9 +453,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created history markdown file:", historyFileName)
+			if ListLoud {
+				fmt.Println("Created history markdown file:", historyFileName)
+			}
 		} else {
-			fmt.Println("No history found for card", card.Name)
+			if ListLoud {
+				fmt.Println("No history found for card", card.Name)
+			}
 			// Create an empty history markdown file if no history found
 			// This is to ensure the file exists for future reference
 			historyFileName := cardPath + "/CardHistory.md"
@@ -433,9 +481,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created due date markdown file:", dueFileName)
+			if ListLoud {
+				fmt.Println("Created due date markdown file:", dueFileName)
+			}
 		} else {
-			fmt.Println("No due date found for card", card.Name)
+			if ListLoud {
+				fmt.Println("No due date found for card", card.Name)
+			}
 			// Create an empty due date markdown file if no due date found
 			// This is to ensure the file exists for future reference
 			dueFileName := cardPath + "/CardDueDate.md"
@@ -453,9 +505,13 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Created start date markdown file:", startFileName)
+			if ListLoud {
+				fmt.Println("Created start date markdown file:", startFileName)
+			}
 		} else {
-			fmt.Println("No start date found for card", card.Name)
+			if ListLoud {
+				fmt.Println("No start date found for card", card.Name)
+			}
 			// Create an empty start date markdown file if no start date found
 			// This is to ensure the file exists for future reference
 			startFileName := cardPath + "/CardStartDate.md"
@@ -468,14 +524,18 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			- If cover is a color, save as a markdown file with the color name
 		*/
 		if card.Cover == nil {
-			fmt.Println("No cover set on card", card.Name)
+			if ListLoud {
+				fmt.Println("No cover set on card", card.Name)
+			}
 		} else if card.Cover.Color != "" {
 			colorFile := filepath.Join(cardPath, "CardCoverColor.md")
 			if err := os.WriteFile(colorFile, []byte(card.Cover.Color), 0644); err != nil {
 				fmt.Println("Error writing cover color for", card.Name, ":", err)
 			}
 		} else {
-			fmt.Println("Cover is an image, already downloaded in attachments for card", card.Name)
+			if ListLoud {
+				fmt.Println("Cover is an image, already downloaded in attachments for card", card.Name)
+			}
 		}
 
 	}

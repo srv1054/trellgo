@@ -24,7 +24,6 @@ type ARGS struct {
 	ListLabelIDs     bool
 	ListTotalCards   bool
 	SeparateArchived bool
-	ListLoud         bool
 	StoragePath      string
 	BoardID          string
 	LabelID          string
@@ -46,7 +45,7 @@ func getCLIArgs() (config ARGS) {
 		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
 		LabelID          = flag.String("l", "", "Only include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)")
 		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
-		ListLoud         = flag.Bool("loud", false, "Enable more verbose output")
+		Loud             = flag.Bool("loud", false, "Enable more verbose output")
 		StoragePath      = flag.String("s", "", "Root Level path to store board information")
 		SeparateArchived = flag.Bool("split", false, "Separate archived cards into their own directory")
 		ver              = flag.Bool("v", false, "Version Check")
@@ -66,7 +65,7 @@ func getCLIArgs() (config ARGS) {
 	config.ListTotalCards = *ListTotalCards
 	config.StoragePath = *StoragePath
 	config.SeparateArchived = *SeparateArchived
-	config.ListLoud = *ListLoud
+	ListLoud = *Loud
 
 	// Handle -v version
 	if *ver {
@@ -153,7 +152,9 @@ func printHelp(version string) {
 func dirCreate(storagePath string) {
 	// check if passed directory exists if not create it
 	if _, err := os.Stat(storagePath); os.IsNotExist(err) {
-		fmt.Println("Creating requested directory:", storagePath)
+		if ListLoud {
+			fmt.Println("Creating requested directory:", storagePath)
+		}
 		err := os.MkdirAll(storagePath, os.ModePerm)
 		if err != nil {
 			fmt.Println("Error: Unable to create requested directory:", storagePath)
@@ -161,7 +162,9 @@ func dirCreate(storagePath string) {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Println("Requested directory already exists:", storagePath)
+		if ListLoud {
+			fmt.Println("Requested directory already exists:", storagePath)
+		}
 	}
 }
 
@@ -258,7 +261,9 @@ func downLoadFile(fileURL string, localFilePath string) error {
 		filePath = localFilePath + fileName
 	}
 
-	fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", filePath)
+	if ListLoud {
+		fmt.Println("Downloading file named", fileName, "from URL:", fileURL, "to local path:", filePath)
+	}
 
 	// Create the file
 	out, err := os.Create(filePath)
@@ -285,14 +290,18 @@ func downLoadFile(fileURL string, localFilePath string) error {
 		return err
 	}
 
-	fmt.Println("Downloaded:", filePath)
+	if ListLoud {
+		fmt.Println("Downloaded:", filePath)
+	}
 	return nil
 }
 
 // downloadFileAuthHeader - download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
-	fmt.Println("Downloading file from URL:", fileURL, "to local path:", localFilePath)
+	if ListLoud {
+		fmt.Println("Downloading file from URL:", fileURL, "to local path:", localFilePath)
+	}
 
 	// Create a new HTTP request with Authorization header
 	req, err := http.NewRequest("GET", fileURL, nil)
