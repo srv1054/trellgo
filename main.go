@@ -25,7 +25,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.2.01"
+	version = "0.2.02"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stin Pipe input
@@ -34,6 +34,11 @@ func main() {
 
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
+
+	// Message this once outside the loop, rather than for each board on multiple board input
+	if config.ARGS.ListTotalCards {
+		fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
+	}
 
 	// Range through board IDs.  Came in via CLI args or stdin pipe
 	for _, boardID := range listOfBoards {
@@ -66,7 +71,6 @@ func main() {
 		/* Process Card Counts Request */
 		if config.ARGS.ListTotalCards {
 
-			fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
 			totalCards, _ := board.GetCards(trello.Arguments{"filter": "all"})
 			openCards, _ := board.GetCards(trello.Arguments{"filter": "open"})
 			closedCards, _ := board.GetCards(trello.Arguments{"filter": "closed"})
@@ -84,6 +88,9 @@ func main() {
 
 			t.SetStyle(table.StyleLight)
 			t.Style().Color.Header = text.Colors{text.FgHiGreen, text.Bold}
+
+			fmt.Printf("\n\nCard Counts for Board: %s (%s)\n\n", board.Name, board.ID)
+
 			t.Render()
 
 			fmt.Println()
