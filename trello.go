@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	"github.com/adlio/trello"
 )
@@ -147,12 +146,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		// if we are in non-verbose mode, show a card progress counter
 		if !ListLoud {
-			frames := []rune{'|', '/', '-', '\\'}
-			prefix := fmt.Sprintf("\rProcessed %3d/%3d", x+1, len(cards))
-			for _, f := range frames {
-				fmt.Printf("\r%s%c", prefix, f)
-				time.Sleep(50 * time.Millisecond)
-			}
+			fmt.Printf("\rProcessed %3d/%3d", x+1, len(cards))
 		}
 
 		// find cards list name
