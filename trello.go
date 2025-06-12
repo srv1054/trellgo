@@ -144,6 +144,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	// Loop through cards and dump to directory structure
 	for x, card := range cards {
 
+		// if we are in non-verbose mode, show a card progress counter
 		if !ListLoud {
 			fmt.Printf("\rProcessed %3d/%3d", x+1, len(cards))
 		}
