@@ -2,7 +2,7 @@
 
 # Board Stuff  
 - [x] Board members
-- [ ] Add ability to filter board dump by specific LABELs
+- [x] Add ability to filter board dump by specific LABELs
 
 # Card Stuff  
 - [x] Card Covers 

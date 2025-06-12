@@ -23,7 +23,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.1.05"
+	version = "0.1.06"
 
 	// Load CLI arguments and OS ENV
 	config.ARGS = getCLIArgs()
@@ -87,6 +87,7 @@ func main() {
 	}
 
 	// Process board data
+	// validate board ID by getting the board data
 	board, err := client.GetBoard(config.ARGS.BoardID, trello.Defaults())
 	if err != nil {
 		fmt.Println("Error: Unable to get board data for board ID", config.ARGS.BoardID)

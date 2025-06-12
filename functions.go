@@ -43,7 +43,7 @@ func getCLIArgs() (config ARGS) {
 		Archived         = flag.Bool("a", false, "Include archived cards in dump")
 		BoardID          = flag.String("b", "", "Trello board to dump Unique Identifier")
 		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
-		LabelID          = flag.String("l", "", "Only include cards with this label ID")
+		LabelID          = flag.String("l", "", "Only include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)")
 		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
 		StoragePath      = flag.String("s", "", "Root Level path to store board information")
 		SeparateArchived = flag.Bool("split", false, "Separate archived cards into their own directory")
@@ -81,6 +81,12 @@ func getCLIArgs() (config ARGS) {
 	// Check for required flag of Storage Path if not listing labels or card totals
 	if !*ListLabelIDs && !*ListTotalCards && *StoragePath == "" {
 		fmt.Println("Error: No Storage Path provided. REQUIRED")
+		printHelp(version)
+		os.Exit(1)
+	}
+
+	if *LabelID != "" && *Archived {
+		fmt.Println("Error: Cannot use -l flag with -a flag. Use -l without -a to filter by label ID")
 		printHelp(version)
 		os.Exit(1)
 	}

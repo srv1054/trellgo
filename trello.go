@@ -10,7 +10,12 @@ import (
 	"github.com/adlio/trello"
 )
 
-// dumpABoard - Process the board data and dump to specified directory structure
+/*
+dumpABoard - Process the board data and dump to specified directory structure
+
+	assumes board ID is valid and exists
+	assumes client is already authenticated with valid API key and token
+*/
 func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	var (
@@ -68,9 +73,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 	}
 
-	/*		Get Board Members
-			- Create markdown file for board members
-			- Include member name and ID
+	/*
+		Get Board Members
+		- Create markdown file for board members
+		- Include member name and ID
 	*/
 	fmt.Println("Grabbing members for board:", board.Name)
 	members, err := board.GetMembers()
@@ -92,15 +98,31 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	/*
 		Get all cards (open unless -a flag is set which includes archived)
 	*/
-	// ### STILL NEED TO HANDLE SPECIFIC LABEL ID REQUESTS FEATURE
-	if config.ARGS.Archived {
-		cards, err = board.GetCards(trello.Arguments{"filter": "all"})
+	// Handle specific label ID search, if provided
+	if config.ARGS.LabelID != "" {
+		fmt.Println("Searching for only cards with label ID:", config.ARGS.LabelID)
+		query := fmt.Sprintf("board:%s label:\"%s\"", board.ID, config.ARGS.LabelID)
+		cards, err = client.SearchCards(query, trello.Defaults())
+		if err != nil {
+			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID, "with label ID", config.ARGS.LabelID)
+			os.Exit(1)
+		}
 	} else {
-		cards, err = board.GetCards(trello.Arguments{"filter": "open"})
+		if config.ARGS.Archived {
+			cards, err = board.GetCards(trello.Arguments{"filter": "all"})
+		} else {
+			cards, err = board.GetCards(trello.Arguments{"filter": "open"})
+		}
+		if err != nil {
+			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID)
+			os.Exit(1)
+		}
 	}
-	if err != nil {
-		fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID)
-		os.Exit(1)
+
+	// If no cards found, exit with message
+	if len(cards) == 0 {
+		fmt.Println("No cards found for board", board.Name)
+		os.Exit(0)
 	}
 
 	// Loop through cards and dump to directory structure
