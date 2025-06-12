@@ -96,12 +96,17 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	}
 
 	/*
-		Get all cards (open unless -a flag is set which includes archived)
+		Get all cards
+		- If -a flag is set, include archived cards
+		- If -l flag is set, only include cards with the specified label ID
+			- Does not work with -a flag
+		- If -split flag is set, archived cards will be moved to an ARCHIVED directory
 	*/
-	// Handle specific label ID search, if provided
+	// Handle specific label ID search, if provided (-l flag)
 	if config.ARGS.LabelID != "" {
 		fmt.Println("Searching for only cards with label ID:", config.ARGS.LabelID)
-		query := fmt.Sprintf("board:%s label:\"%s\"", board.ID, config.ARGS.LabelID)
+		query := fmt.Sprintf("board:%s label:\"%s\" is:open", board.ID, config.ARGS.LabelID)
+		fmt.Println("Querying Trello API with:", query)
 		cards, err = client.SearchCards(query, trello.Defaults())
 		if err != nil {
 			fmt.Println("Error: Unable to get card data for board ID", config.ARGS.BoardID, "with label ID", config.ARGS.LabelID)
