@@ -25,7 +25,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.2.02"
+	version = "0.3.00"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input
@@ -37,7 +37,7 @@ func main() {
 
 	// Message this once outside the loop, rather than for each board on multiple board input
 	if config.ARGS.ListTotalCards {
-		fmt.Printf("\n\nLarge Boards will take a moment to retreive this data...\n\n")
+		logger("\n\nLarge Boards will take a moment to retreive this data...\n\n", true, false, config)
 	}
 
 	// Range through board IDs.  Came in via CLI args or stdin pipe
@@ -46,9 +46,7 @@ func main() {
 		// validate board ID by getting the board data
 		board, err := client.GetBoard(boardID, trello.Defaults())
 		if err != nil {
-			fmt.Println("Error: Unable to get board data for board ID", boardID)
-			fmt.Println(err)
-
+			logger("Error: Unable to get board data for board ID"+boardID+": "+err.Error(), true, false, config)
 			continue
 		}
 
@@ -57,8 +55,7 @@ func main() {
 
 			labels, err := board.GetLabels(trello.Defaults())
 			if err != nil {
-				fmt.Println("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+")", boardID)
-				fmt.Println(err)
+				logger("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+"): "+err.Error(), true, false, config)
 				continue
 			}
 
@@ -100,16 +97,20 @@ func main() {
 
 		/* Process board data (-b) or (stdin pipe) */
 		if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
-			fmt.Println()
-			fmt.Println("Processing Board Name:", board.Name)
+			if !config.ARGS.SuperQuiet {
+				fmt.Println()
+			}
+			logger("Processing Board Name: "+board.Name, true, false, config)
 			dumpABoard(config, board, client)
 
-			fmt.Println()
-			fmt.Println("Processing Complete")
+			if !config.ARGS.SuperQuiet {
+				fmt.Println()
+			}
+			logger("Processing Complete", true, false, config)
 		}
 	}
 
 	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
-		fmt.Println("Your board backups are in the directory:", config.ARGS.StoragePath)
+		logger("Your board backups are in the directory:"+config.ARGS.StoragePath, true, false, config)
 	}
 }

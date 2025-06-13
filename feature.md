@@ -8,7 +8,7 @@
 # Board Stuff  
 - [x] Board members
 - [x] Add ability to filter board dump by specific LABELs
-- [ ] Add ability to feed a "list" of board ID's in and have it grab them all
+- [x] Add ability to feed a "list" of board ID's in and have it grab them all
 
 # Card Stuff  
 - [x] Card Covers 
