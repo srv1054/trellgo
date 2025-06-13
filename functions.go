@@ -35,20 +35,24 @@ type ENV struct {
 	TRELLOAPIURL string
 }
 
-// getCLIArgs - Get CLI arguments and flags
+/*
+getCLIArgs
+
+	Get CLI arguments and flags
+*/
 func getCLIArgs() (config ARGS, boards []string) {
 
 	var (
 		// CLI Flags
-		Archived         = flag.Bool("a", false, "Include archived cards in dump")
-		BoardID          = flag.String("b", "", "Trello board to dump Unique Identifier (or PIPE (|) IDs in one per line)")
-		ListTotalCards   = flag.Bool("count", false, "List total number of cards in the board")
-		LabelID          = flag.String("l", "", "Only include cards with this label ID (Does not work with -a flag. Requires ID of label, not name)")
-		ListLabelIDs     = flag.Bool("labels", false, "Retrieve boards list of Label IDs")
-		Loud             = flag.Bool("loud", false, "Enable more verbose output")
-		StoragePath      = flag.String("s", "", "Root Level path to store board information")
-		SeparateArchived = flag.Bool("split", false, "Separate archived cards into their own directory")
-		ver              = flag.Bool("v", false, "Version Check")
+		Archived         = flag.Bool("a", false, "")
+		BoardID          = flag.String("b", "", "")
+		ListTotalCards   = flag.Bool("count", false, "")
+		LabelID          = flag.String("l", "", "")
+		ListLabelIDs     = flag.Bool("labels", false, "")
+		Loud             = flag.Bool("loud", false, "")
+		StoragePath      = flag.String("s", "", "n")
+		SeparateArchived = flag.Bool("split", false, "")
+		ver              = flag.Bool("v", false, "")
 	)
 
 	// Handle -h help
@@ -72,7 +76,7 @@ func getCLIArgs() (config ARGS, boards []string) {
 		os.Exit(0)
 	}
 
-	// If no board ID is provided, check if stdin is piped
+	// Check if we need to use STDIN (Pipe) or -b for BoardIDs
 	boards, err := getBoardIDs(*BoardID, os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n\n", err)
@@ -80,13 +84,14 @@ func getCLIArgs() (config ARGS, boards []string) {
 		os.Exit(1)
 	}
 
-	// Check for required flag of Storage Path if not listing labels or card totals
+	// Check for required flag of Storage Path if not using -labels or -count
 	if !*ListLabelIDs && !*ListTotalCards && *StoragePath == "" {
 		fmt.Println("Error: No Storage Path provided. REQUIRED")
 		printHelp(version)
 		os.Exit(1)
 	}
 
+	// Searching on a specific Label will not allow search of archives, need to inform user
 	if *LabelID != "" && *Archived {
 		fmt.Println("Error: Cannot use -l flag with -a flag. Use -l without -a to filter by label ID")
 		printHelp(version)
@@ -96,7 +101,11 @@ func getCLIArgs() (config ARGS, boards []string) {
 	return config, boards
 }
 
-// getOSENV - Get Trello API Key from OS Environment
+/*
+getOSENV
+
+	Get Trello API Key from OS Environment
+*/
 func getOSENV() (config ENV) {
 
 	// Load vars in dotenv file if it exists (preferred method)
@@ -123,8 +132,10 @@ func getOSENV() (config ENV) {
 }
 
 /*
-getBoardIDs - Get Board IDs from CLI flag or stdin
-If the -b flag is used, it will return that ID.
+getBoardIDs
+
+	Get Board IDs from CLI flag or stdin
+	If the -b flag is used, it will return that ID.
 */
 func getBoardIDs(boardFlag string, stdin io.Reader) ([]string, error) {
 	fi, err := os.Stdin.Stat()
@@ -157,7 +168,11 @@ func getBoardIDs(boardFlag string, stdin io.Reader) ([]string, error) {
 	return ids, nil
 }
 
-// printHelp - prints help menu when -h is used on CLI
+/*
+printHelp
+
+	Prints help menu when -h is used on CLI
+*/
 func printHelp(version string) {
 	fmt.Printf("\ttrellgo v%s by srv1054 (github.com/srv1054/trellgo)\n", version)
 	fmt.Println()
@@ -183,7 +198,11 @@ func printHelp(version string) {
 	os.Exit(0)
 }
 
-// dirCreate - Create main directory if it doesn't exist
+/*
+dirCreate
+
+	Create a directory if it doesn't exist
+*/
 func dirCreate(storagePath string) {
 	// check if passed directory exists if not create it
 	if _, err := os.Stat(storagePath); os.IsNotExist(err) {
@@ -203,7 +222,11 @@ func dirCreate(storagePath string) {
 	}
 }
 
-// prettyPrintLabels - Print out the labels output in a pretty table
+/*
+prettyPrintLabels
+
+	Print out the labels output in a pretty table
+*/
 func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 
 	var (
@@ -254,7 +277,12 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 	return buf
 }
 
-// SanitizePath - Sanitize the path for file system before creating directories.  Returns sanitized string
+/*
+SanitizePath
+
+	Sanitize the path for file system before creating directories.
+	Returns sanitized string
+*/
 func SanitizePathName(name string) string {
 	// Define allowed characters (letters, numbers, underscores, dashes, and dots)
 	re := regexp.MustCompile(`[^a-zA-Z0-9 ._-]`)
@@ -279,7 +307,11 @@ func SanitizePathName(name string) string {
 	return sanitized
 }
 
-// downLoadFile - Download a remote file to the local drive for certain types of attachments, like board background images
+/*
+downLoadFile
+
+	Download a remote file to the local drive for certain types of attachments, like board background images
+*/
 func downLoadFile(fileURL string, localFilePath string) error {
 
 	var (
@@ -334,7 +366,11 @@ func downLoadFile(fileURL string, localFilePath string) error {
 	return nil
 }
 
-// downloadFileAuthHeader - download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
+/*
+downloadFileAuthHeader
+
+	Download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
+*/
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
 	if ListLoud {

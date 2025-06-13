@@ -28,7 +28,7 @@ func main() {
 	version = "0.2.02"
 
 	// Load CLI arguments and OS ENV
-	// This also must handle stin Pipe input
+	// This also must handle stdin Pipe input
 	config.ARGS, listOfBoards = getCLIArgs()
 	config.ENV = getOSENV()
 
@@ -52,7 +52,7 @@ func main() {
 			continue
 		}
 
-		/* Process Label List Request */
+		/* Process Label List Request (-labels) */
 		if config.ARGS.ListLabelIDs {
 
 			labels, err := board.GetLabels(trello.Defaults())
@@ -68,7 +68,7 @@ func main() {
 			continue
 		}
 
-		/* Process Card Counts Request */
+		/* Process Card Counts Request (-count) */
 		if config.ARGS.ListTotalCards {
 
 			totalCards, _ := board.GetCards(trello.Arguments{"filter": "all"})
@@ -98,7 +98,7 @@ func main() {
 			continue
 		}
 
-		/* Process board data */
+		/* Process board data (-b) or (stdin pipe) */
 		if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
 			fmt.Println()
 			fmt.Println("Processing Board Name:", board.Name)
