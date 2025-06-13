@@ -25,7 +25,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.3.01"
+	version = "0.3.02"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input

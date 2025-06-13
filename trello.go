@@ -520,7 +520,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	}
 
-	if !ListLoud {
+	if !ListLoud && !config.ARGS.SuperQuiet {
 		fmt.Println() // New line after running counter
 	}
 }
