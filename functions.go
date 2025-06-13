@@ -186,7 +186,7 @@ func printHelp(version string) {
 	fmt.Printf("  -count\tList total number of cards in the board\n")
 	fmt.Printf("  -l\t\tOnly include cards with this label NAME (Does not work with -a flag. Requires NAME of label \"in quotes\", not ID)\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
-	fmt.Printf("  -loud\tEnable more verbose output\n")
+	fmt.Printf("  -loud\t\tEnable more verbose output\n")
 	fmt.Printf("  -qq\t\tSuppress ALL console output.  Super Quiet mode.  Does not effect logging, just console.  Does not apply to -labels or -count\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
 	fmt.Printf("  -split\tSeparate archived cards into their own directory (instead of mixed in and labeled with -ARCHIVED)\n")

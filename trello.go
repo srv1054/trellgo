@@ -142,7 +142,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 	}
 
-	if !ListLoud {
+	if !ListLoud && !config.ARGS.SuperQuiet {
 		fmt.Println() // blank line to make counter output cleaner
 	}
 
@@ -150,8 +150,11 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	for x, card := range cards {
 
 		// if we are in non-verbose mode, show a card progress counter
+		// unless we are in -qq then STFU
 		if !ListLoud {
-			fmt.Printf("\rProcessing %3d/%3d", x+1, len(cards))
+			if !config.ARGS.SuperQuiet {
+				fmt.Printf("\rProcessing %3d/%3d", x+1, len(cards))
+			}
 		}
 
 		// find cards list name
