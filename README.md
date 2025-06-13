@@ -38,7 +38,7 @@ You can use the `-count` parameter and get a prettified card count of Open Cards
 ### Extra logging info
 Right now minimal info is dumped to the console when you run the binary, by design, however if you want gobs of information to see what's going on, add `-loud` to the CLI paramemter list.  
 
-Be nice feature to add some sort of logging so you can get a quite console and get all the loud stuff into a log behind the scenes.   I've added that to the `feature.md` file.
+You can also add the parameter `-log "file"` and specify a file with a path to a log file.  This will write all messages (info,warn,err) to this file, regardless of settings with `-qq` or `-loud`.   If this file exists, the system will append to it, if it does not exist it will be created.  This is off by default, you must specify `-log "file"` to use this feature.
 
 ### Examples
  - Normal board dump with no archived cards
@@ -51,6 +51,8 @@ Be nice feature to add some sort of logging so you can get a quite console and g
    - `trellgo -b 5f3g1a2 -count`
  - Dump the board but only cards with the label "Completed Items"
    - `trellgo -b 5f3g1a2 -label "Completed Items" -s '/path/to/here'`
+ - Add logging file to a scenario
+   - `trellgo -b 5f3g1a2 -s '/path/to/here' -logs '/path/file.log'`
   
 ### Notes
 Please improve and add features and fix bugs.  Just submit a Pull Request for review and we will merge things in!
