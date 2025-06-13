@@ -26,8 +26,10 @@ type ARGS struct {
 	ListTotalCards   bool
 	SeparateArchived bool
 	SuperQuiet       bool
+	LoggingEnabled   bool
 	StoragePath      string
 	LabelID          string
+	LogFile          string
 }
 
 type ENV struct {
@@ -50,6 +52,7 @@ func getCLIArgs() (config ARGS, boards []string) {
 		ListTotalCards   = flag.Bool("count", false, "")
 		LabelID          = flag.String("l", "", "")
 		ListLabelIDs     = flag.Bool("labels", false, "")
+		LogFile          = flag.String("logs", "", "")
 		Loud             = flag.Bool("loud", false, "")
 		QQ               = flag.Bool("qq", false, "")
 		StoragePath      = flag.String("s", "", "n")
@@ -71,6 +74,8 @@ func getCLIArgs() (config ARGS, boards []string) {
 	config.StoragePath = *StoragePath
 	config.SeparateArchived = *SeparateArchived
 	config.SuperQuiet = *QQ
+	config.LogFile = *LogFile
+
 	ListLoud = *Loud
 
 	// Handle -v version
@@ -187,6 +192,7 @@ func printHelp(version string) {
 	fmt.Printf("  -l\t\tOnly include cards with this label NAME (Does not work with -a flag. Requires NAME of label \"in quotes\", not ID)\n")
 	fmt.Printf("  -labels\tRetrieve boards list of Label IDs\n")
 	fmt.Printf("  -loud\t\tEnable more verbose output\n")
+	fmt.Printf("  -logs \"file\"\tSpecifies a log file to send all output. Off by default, if enabled, its not effected by -loud or -qq parameters.\n")
 	fmt.Printf("  -qq\t\tSuppress ALL console output.  Super Quiet mode.  Does not effect logging, just console.  Does not apply to -labels or -count\n")
 	fmt.Printf("  -s\t\tRoot Level path to store board information (REQUIRED)\n")
 	fmt.Printf("  -split\tSeparate archived cards into their own directory (instead of mixed in and labeled with -ARCHIVED)\n")
@@ -196,6 +202,7 @@ func printHelp(version string) {
 	fmt.Println()
 	fmt.Printf("Example: trellgo -b c52d11s -l ff3sg135 -s '/path/to/here'\n")
 	fmt.Printf("Example: trellgo -b c52d11s -a -split -s '/path/to/here'\n")
+	fmt.Printf("Example: trellgo -b c52d11s -s '/path/to/here' -logs '/path/file.log'\n")
 	fmt.Printf("Example: trellgo -b t532aad -labels\n")
 	fmt.Printf("Example: trellgo -b 5f3g1a2 -count\n")
 	fmt.Println()
@@ -211,15 +218,15 @@ func dirCreate(storagePath string) {
 	// check if passed directory exists if not create it
 	if _, err := os.Stat(storagePath); os.IsNotExist(err) {
 
-		logger("Creating requested directory:"+storagePath, true, true, config)
+		logger("Creating requested directory:"+storagePath, "info", true, true, config)
 
 		err := os.MkdirAll(storagePath, os.ModePerm)
 		if err != nil {
-			logger("Error: Unable to create requested directory "+storagePath+": "+err.Error(), true, false, config)
+			logger("Error: Unable to create requested directory "+storagePath+": "+err.Error(), "err", true, false, config)
 			os.Exit(1)
 		}
 	} else {
-		logger("Requested directory already exists: "+storagePath, true, true, config)
+		logger("Requested directory already exists: "+storagePath, "info", true, true, config)
 	}
 }
 
@@ -296,7 +303,7 @@ func SanitizePathName(name string) string {
 
 	// Ensure it is not empty
 	if sanitized == "" {
-		logger("Requested path name "+name+" is empty after sanitization", true, false, config)
+		logger("Requested path name "+name+" is empty after sanitization", "info", true, false, config)
 		os.Exit(1)
 	}
 
@@ -332,7 +339,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 		filePath = localFilePath + fileName
 	}
 
-	logger("Downloading file named "+fileName+"from URL: "+fileURL+"to local path: "+filePath, true, true, config)
+	logger("Downloading file named "+fileName+"from URL: "+fileURL+"to local path: "+filePath, "info", true, true, config)
 
 	// Create the file
 	out, err := os.Create(filePath)
@@ -358,7 +365,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 	if err != nil {
 		return err
 	}
-	logger("Downloaded: "+filePath, true, true, config)
+	logger("Downloaded: "+filePath, "info", true, true, config)
 
 	return nil
 }
@@ -370,7 +377,7 @@ downloadFileAuthHeader
 */
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
-	logger("Downloading file from URL: "+fileURL+" to local path: "+localFilePath, true, true, config)
+	logger("Downloading file from URL: "+fileURL+" to local path: "+localFilePath, "info", true, true, config)
 
 	// Create a new HTTP request with Authorization header
 	req, err := http.NewRequest("GET", fileURL, nil)
