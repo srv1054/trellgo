@@ -25,19 +25,32 @@ type Config struct {
 
 func main() {
 
-	version = "0.3.02"
+	version = "0.3.04"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input
 	config.ARGS, listOfBoards = getCLIArgs()
 	config.ENV = getOSENV()
 
+	// Create Log File if Enabled
+	if config.ARGS.LogFile != "" {
+		if startLog(config) {
+			config.ARGS.LoggingEnabled = true
+			logger("Successfully started log file: "+config.ARGS.LogFile, "info", true, false, config)
+		} else {
+			config.ARGS.LoggingEnabled = false
+		}
+	}
+
+	// Announce we are starting, this will only go to logfile if its enabled
+	logger("Starting New Trellgo (v"+version+") run.", "info", false, false, config)
+
 	// Create Trello Client
 	client = trello.NewClient(config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
 
 	// Message this once outside the loop, rather than for each board on multiple board input
 	if config.ARGS.ListTotalCards {
-		logger("\n\nLarge Boards will take a moment to retreive this data...\n\n", true, false, config)
+		logger("\n\nLarge Boards will take a moment to retreive this data...\n\n", "info", true, false, config)
 	}
 
 	// Range through board IDs.  Came in via CLI args or stdin pipe
@@ -46,7 +59,7 @@ func main() {
 		// validate board ID by getting the board data
 		board, err := client.GetBoard(boardID, trello.Defaults())
 		if err != nil {
-			logger("Error: Unable to get board data for board ID"+boardID+": "+err.Error(), true, false, config)
+			logger("Error: Unable to get board data for board ID"+boardID+": "+err.Error(), "err", true, false, config)
 			continue
 		}
 
@@ -55,7 +68,7 @@ func main() {
 
 			labels, err := board.GetLabels(trello.Defaults())
 			if err != nil {
-				logger("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+"): "+err.Error(), true, false, config)
+				logger("Error: Unable to get label data for board ID "+board.ID+" ("+board.Name+"): "+err.Error(), "err", true, false, config)
 				continue
 			}
 
@@ -100,17 +113,17 @@ func main() {
 			if !config.ARGS.SuperQuiet {
 				fmt.Println()
 			}
-			logger("Processing Board Name: "+board.Name, true, false, config)
+			logger("Processing Board Name: "+board.Name, "info", true, false, config)
 			dumpABoard(config, board, client)
 
 			if !config.ARGS.SuperQuiet {
 				fmt.Println()
 			}
-			logger("Processing Complete", true, false, config)
+			logger("Processing Complete", "info", true, false, config)
 		}
 	}
 
 	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
-		logger("Your board backups are in the directory:"+config.ARGS.StoragePath, true, false, config)
+		logger("Your board backups are in the directory:"+config.ARGS.StoragePath, "info", true, false, config)
 	}
 }

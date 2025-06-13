@@ -3,7 +3,7 @@
 ## Things to add and do
 
 - [x] Update console logging output, make that cleaner, more configurable
-- [ ] Add background logging feature.  Get all the noise for later, but don't see it up front :boom:
+- [x] Add background logging feature.  Get all the noise for later, but don't see it up front :boom:
 
 # Board Stuff  
 - [x] Board members
