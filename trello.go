@@ -39,6 +39,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	boardPath = SanitizePathName(board.Name)
 	dirCreate(config.ARGS.StoragePath + "/" + boardPath)
 
+	// Stash in master slice for reference later
+	boardTracker = append(boardTracker, board.Name+" ("+board.ID+")")
+
 	/*
 		Board Level Data
 	*/

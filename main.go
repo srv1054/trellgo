@@ -13,6 +13,7 @@ import (
 var (
 	version      string
 	listOfBoards []string
+	boardTracker []string // Used to track boards that have been processed to reference at the end of the run
 	ListLoud     bool
 	config       Config
 	client       *trello.Client
@@ -25,7 +26,7 @@ type Config struct {
 
 func main() {
 
-	version = "0.3.07"
+	version = "0.3.08"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input
@@ -125,5 +126,13 @@ func main() {
 
 	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
 		logger("Your board backups are in the directory:"+config.ARGS.StoragePath, "info", true, false, config)
+	}
+
+	// If we have processed boards, print them out
+	if len(boardTracker) > 0 {
+		fmt.Println("\nBoards Processed:")
+		for _, boardName := range boardTracker {
+			logger(" - "+boardName, "info", true, false, config)
+		}
 	}
 }
