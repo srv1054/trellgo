@@ -24,6 +24,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		cleanListPath string
 		cleanCardPath string
 		cardPath      string
+		boardPath     string
 		dueFileName   string
 		cardNumber    int
 		buff          bytes.Buffer
@@ -35,8 +36,8 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	// Create main directory
 	dirCreate(config.ARGS.StoragePath)
 	// Create directory in path named by board name
-	tmpPath := SanitizePathName(board.Name)
-	dirCreate(config.ARGS.StoragePath + "/" + tmpPath)
+	boardPath = SanitizePathName(board.Name)
+	dirCreate(config.ARGS.StoragePath + "/" + boardPath)
 
 	/*
 		Board Level Data
@@ -44,7 +45,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	// Save board background image if exists
 	if board.Prefs.BackgroundImage != "" {
 		url := board.Prefs.BackgroundImage
-		localFilePath := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardBackground-")
+		localFilePath := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardBackground-")
 		err := downLoadFile(url, localFilePath)
 		if err != nil {
 			logger("Error: Unable to download background image for board "+board.Name+": "+err.Error(), "err", true, false, config)
@@ -67,7 +68,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		buf := prettyPrintLabels(labels, true)
 
 		// Write buffer content to a file
-		labelFileName := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardLabels.md")
+		labelFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardLabels.md")
 		err := os.WriteFile(labelFileName, buf.Bytes(), 0644)
 		if err != nil {
 			panic(err)
@@ -93,7 +94,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			memberBuf.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
 		}
 		// Write buffer content to a file
-		memberFileName := filepath.Join(config.ARGS.StoragePath, board.Name, "BoardMembers.md")
+		memberFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardMembers.md")
 		err := os.WriteFile(memberFileName, memberBuf.Bytes(), 0644)
 		if err != nil {
 			panic(err)
@@ -166,7 +167,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		// create list directory
 		cleanListPath = SanitizePathName(list.Name)
-		dirCreate(filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath))
+		dirCreate(filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath))
 
 		// Create directory for card name
 		cleanCardPath = SanitizePathName(card.Name)
@@ -174,14 +175,14 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		if card.Closed {
 			if !config.ARGS.SeparateArchived {
 				// If -split flag is not set, append ARCHIVED to the card name
-				cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath, cleanCardPath+" (ARCHIVED)")
+				cardPath = filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, cleanCardPath+" (ARCHIVED)")
 				// If -split flag is set, move to ARCHIVED directory
 			} else {
-				cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, "ARCHIVED", cleanListPath, cleanCardPath)
+				cardPath = filepath.Join(config.ARGS.StoragePath, boardPath, "ARCHIVED", cleanListPath, cleanCardPath)
 			}
 			// card is not archived
 		} else {
-			cardPath = filepath.Join(config.ARGS.StoragePath, board.Name, cleanListPath, cleanCardPath)
+			cardPath = filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, cleanCardPath)
 		}
 
 		dirCreate(cardPath)
