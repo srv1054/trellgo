@@ -11,11 +11,13 @@ import (
 
 // GLobal
 var (
-	version      string
-	listOfBoards []string
-	ListLoud     bool
-	config       Config
-	client       *trello.Client
+	version               string
+	listOfBoards          []string // manage boards that are piped in from a file
+	boardTracker          []string // Used to track boards that have been processed to reference at the end of the run
+	errorWarnOnCompletion bool
+	ListLoud              bool
+	config                Config
+	client                *trello.Client
 )
 
 type Config struct {
@@ -25,7 +27,11 @@ type Config struct {
 
 func main() {
 
-	version = "0.3.07"
+	// Major.Feature.Patch
+	version = "0.3.12"
+
+	// No errors so far!
+	errorWarnOnCompletion = false
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input
@@ -125,5 +131,18 @@ func main() {
 
 	if !config.ARGS.ListLabelIDs && !config.ARGS.ListTotalCards {
 		logger("Your board backups are in the directory:"+config.ARGS.StoragePath, "info", true, false, config)
+	}
+
+	// If we have processed boards, print them out
+	if len(boardTracker) > 0 {
+		logger("Boards Processed:", "info", true, false, config)
+		for _, boardName := range boardTracker {
+			logger(" - "+boardName, "info", true, false, config)
+		}
+	}
+
+	if errorWarnOnCompletion {
+		logger("========== WARNING ==========", "warn", true, true, config)
+		logger("There was CRITICAL errors during the process.  Please see log files and search for CRITICAL.", "warn", true, true, config)
 	}
 }

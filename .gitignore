@@ -27,3 +27,5 @@ go.work.sum
 trellgo
 trellgo.exe
 *-amd64-*
+
+test.json

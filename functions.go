@@ -224,7 +224,8 @@ func dirCreate(storagePath string) {
 		err := os.MkdirAll(storagePath, os.ModePerm)
 		if err != nil {
 			logger("Error: Unable to create requested directory "+storagePath+": "+err.Error(), "err", true, false, config)
-			os.Exit(1)
+			// This should always exist as it is critical to remaining file creations and downloads.  Script should halt here with messaging
+			log.Fatal(err)
 		}
 	} else {
 		logger("Requested directory already exists: "+storagePath, "info", true, true, config)
@@ -310,9 +311,10 @@ func SanitizePathName(name string) string {
 		logger("Using fallback name: "+cleaned, "info", true, false, config)
 	}
 
-	// Limit length (optional, e.g., 255 characters)
-	if len(cleaned) > 255 {
-		cleaned = cleaned[:255]
+	// Limit length to 240 characters
+	// This leaves 15 chars for outside func appends without cause panic "filename to long"
+	if len(cleaned) > 240 {
+		cleaned = cleaned[:240]
 	}
 
 	return cleaned
@@ -331,7 +333,8 @@ func downLoadFile(fileURL string, localFilePath string) error {
 
 	u, err := url.Parse(fileURL)
 	if err != nil {
-		log.Fatalf("invalid URL: %v", err)
+		logger("Fatal Download attempt, invalid URL. Err: "+err.Error(), "err", true, true, config)
+		return err
 	}
 
 	// Extract filename from the URL
