@@ -11,6 +11,34 @@ import (
 )
 
 /*
+	Doing our own thing, as Trello Go Client doesn't support cardRole in card JSON as of 6/16/2025
+*/
+// Embed trello.Card and add CardRole
+type CardWithRole struct {
+	trello.Card
+	CardRole *string `json:"cardRole,omitempty"`
+}
+
+// isLinkCard - is card a link
+func isLinkCard(client *trello.Client, cardID string) (bool, error) {
+	var cwr CardWithRole
+
+	// Fetch just the fields we care about
+	args := trello.Arguments{
+		"fields": "name,cardRole",
+	}
+	if err := client.Get(fmt.Sprintf("cards/%s", cardID), args, &cwr); err != nil {
+		return false, err
+	}
+
+	// cardRole will be nil (or empty) for normal cards
+	if cwr.CardRole != nil && *cwr.CardRole == "link" {
+		return true, nil
+	}
+	return false, nil
+}
+
+/*
 dumpABoard - Process the board data and dump to specified directory structure
 
 	assumes board ID is valid and exists
@@ -19,16 +47,15 @@ dumpABoard - Process the board data and dump to specified directory structure
 func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	var (
-		cards          []*trello.Card
-		err            error
-		cleanListPath  string
-		cleanCardPath  string
-		cardPath       string
-		boardPath      string
-		dueFileName    string
-		cardNumber     int
-		buff           bytes.Buffer
-		cardIsNotALink bool = true
+		cards         []*trello.Card
+		err           error
+		cleanListPath string
+		cleanCardPath string
+		cardPath      string
+		boardPath     string
+		dueFileName   string
+		cardNumber    int
+		buff          bytes.Buffer
 	)
 
 	/*
@@ -155,8 +182,6 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	// Loop through cards and dump to directory structure
 	for x, card := range cards {
 
-		cardIsNotALink = true
-
 		// if we are in non-verbose mode, show a card progress counter
 		// unless we are in -qq then STFU
 		if !ListLoud {
@@ -177,28 +202,19 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		dirCreate(filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath))
 
 		// We need to handle when card is a LINK and not a regular card
-		attachments, err := card.GetAttachments(trello.Defaults())
-		if err != nil {
-			logger("Error: Unable to get attachment data for card ID "+card.ID+": "+err.Error(), "err", true, true, config)
-		}
-		for _, att := range attachments {
-			if !att.IsUpload && att.URL == card.Name {
-				logger("Card "+card.Name+" is a link to an external URL: "+att.URL, "info", true, true, config)
-				externalURL := att.URL
-				safeName := SanitizePathName(externalURL)
-				cardLinkPath := filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, safeName+".md")
+		// Trello Go client does not support the new field `cardRole` so we have to do our own thing here for now.  6/16/2025
+		isCardLink, _ := isLinkCard(client, card.ID)
 
-				err = os.WriteFile(cardLinkPath, []byte(card.Name), 0644)
-				if err != nil {
-					panic(err)
-				}
-				cardIsNotALink = false
-				break
+		if isCardLink {
+			logger("This card is a link file only, processing as .MD instead of directory", "info", true, true, config)
+			thisCardPath := filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, SanitizePathName(card.Name)+".md")
+			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
+			if err != nil {
+				panic(err)
 			}
-		}
+		} else {
+			// If card is not a link, continue with normal processing
 
-		// If card is not a link, continue with normal processing
-		if cardIsNotALink {
 			// Create directory for card name
 			cleanCardPath = SanitizePathName(card.Name)
 			// If card is archived, append ARCHIVED to the card name or move to ARCHIVED directory
@@ -232,8 +248,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				- Download file attachments
 				- Save URL attachments in a text markdown file
 			*/
-			// 	card.GetAttachments(trello.Defaults()) was pulled up above to check for URL based cards.  We will use it again here
-
+			attachments, err := card.GetAttachments(trello.Defaults())
+			if err != nil {
+				logger("Error: Unable to get attachment data for card ID "+card.ID+": "+err.Error(), "err", true, true, config)
+			}
 			// Clear the old Bytes Buffer
 			buff.Reset()
 
