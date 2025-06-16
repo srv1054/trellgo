@@ -310,9 +310,10 @@ func SanitizePathName(name string) string {
 		logger("Using fallback name: "+cleaned, "info", true, false, config)
 	}
 
-	// Limit length (optional, e.g., 255 characters)
-	if len(cleaned) > 255 {
-		cleaned = cleaned[:255]
+	// Limit length to 240 characters
+	// This leaves 15 chars for outside func appends without cause panic "filename to long"
+	if len(cleaned) > 240 {
+		cleaned = cleaned[:240]
 	}
 
 	return cleaned
