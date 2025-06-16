@@ -26,7 +26,8 @@ type Config struct {
 
 func main() {
 
-	version = "0.3.08"
+	// Major.Feature.Patch
+	version = "0.3.09"
 
 	// Load CLI arguments and OS ENV
 	// This also must handle stdin Pipe input
