@@ -131,7 +131,7 @@ func main() {
 
 	// If we have processed boards, print them out
 	if len(boardTracker) > 0 {
-		fmt.Println("\nBoards Processed:")
+		logger("Boards Processed:", "info", true, false, config)
 		for _, boardName := range boardTracker {
 			logger(" - "+boardName, "info", true, false, config)
 		}
