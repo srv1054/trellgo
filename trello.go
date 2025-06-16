@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/adlio/trello"
 )
@@ -211,7 +212,12 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			thisCardLinkPath := filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, "Link Cards Only")
 			dirCreate(thisCardLinkPath)
 			logger("Created Custom Directory for Link Cards: "+thisCardLinkPath, "info", true, true, config)
-			thisCardPath := filepath.Join(thisCardLinkPath, SanitizePathName(card.Name)+".md")
+			// Cleanup messy filename
+			cleanName := SanitizePathName(card.Name)
+			cleanName = strings.ReplaceAll(cleanName, "https---", "")
+			cleanName = strings.ReplaceAll(cleanName, "http---", "")
+			thisCardPath := filepath.Join(thisCardLinkPath, "CARD - "+cleanName+".md")
+			// Dump URL into card md file
 			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
 			if err != nil {
 				panic(err)
