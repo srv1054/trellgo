@@ -13,6 +13,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/adlio/trello"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -71,7 +72,8 @@ func getCLIArgs() (config ARGS, boards []string) {
 	config.LabelID = *LabelID
 	config.ListLabelIDs = *ListLabelIDs
 	config.ListTotalCards = *ListTotalCards
-	config.StoragePath = *StoragePath
+	// pre sanitize the path name
+	config.StoragePath = SanitizePathName(*StoragePath)
 	config.SeparateArchived = *SeparateArchived
 	config.SuperQuiet = *QQ
 	config.LogFile = *LogFile
@@ -289,30 +291,32 @@ func prettyPrintLabels(labels []*trello.Label, markdown bool) bytes.Buffer {
 SanitizePath
 
 	Sanitize the path for file system before creating directories.
-	Returns sanitized string
+	Returns sanitized string that can be used as a directory name.  Windows and Linux safe.
 */
 func SanitizePathName(name string) string {
-	// Define allowed characters (letters, numbers, underscores, dashes, and dots)
-	re := regexp.MustCompile(`[^a-zA-Z0-9 ._-]`)
 
-	// Replace disallowed characters with underscores
-	sanitized := re.ReplaceAllString(name, "-")
+	var cleaned string
 
-	// Trim leading and trailing dots or underscores to avoid hidden files or empty names
-	sanitized = strings.Trim(sanitized, "._-")
+	// Remove characters illegal on Windows and Linux filesystems
+	re := regexp.MustCompile(`[<>:"/\\|?*]`)
+	cleaned = re.ReplaceAllString(name, "-")
+
+	// Trim leading and trailing chars to avoid hidden files or empty names
+	cleaned = strings.Trim(cleaned, " ._-")
 
 	// Ensure it is not empty
-	if sanitized == "" {
-		logger("Requested path name "+name+" is empty after sanitization", "info", true, false, config)
-		os.Exit(1)
+	if cleaned == "" {
+		logger("Requested path name "+name+" is empty after sanitization", "error", true, false, config)
+		cleaned = fmt.Sprintf("Board-Was-Illegal-Characters-%s", time.Now().Format("20060102-150405"))
+		logger("Using fallback name: "+cleaned, "info", true, false, config)
 	}
 
 	// Limit length (optional, e.g., 255 characters)
-	if len(sanitized) > 255 {
-		sanitized = sanitized[:255]
+	if len(cleaned) > 255 {
+		cleaned = cleaned[:255]
 	}
 
-	return sanitized
+	return cleaned
 }
 
 /*
