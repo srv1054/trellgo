@@ -103,7 +103,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		labelFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardLabels.md")
 		err := os.WriteFile(labelFileName, buf.Bytes(), 0644)
 		if err != nil {
-			panic(err)
+			logger("CRITICAL - Unable to write buffer to file for "+labelFileName+" Error: "+err.Error(), "err", true, true, config)
+			errorWarnOnCompletion = true
+
+			return
 		}
 	}
 
@@ -116,7 +119,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 	members, err := board.GetMembers()
 	if err != nil {
-		logger("Error: Unable to get members for board ID "+board.ID, "err", true, false, config)
+		logger("Error: Unable to get members for board ID "+board.ID, "err", true, true, config)
 	} else {
 		var memberBuf bytes.Buffer
 		for _, member := range members {
@@ -129,7 +132,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		memberFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardMembers.md")
 		err := os.WriteFile(memberFileName, memberBuf.Bytes(), 0644)
 		if err != nil {
-			panic(err)
+			logger("CRITICAL - Unable to write buffer to file for "+memberFileName+" Error: "+err.Error(), "err", true, true, config)
+			errorWarnOnCompletion = true
+
+			return
 		}
 	}
 
@@ -159,15 +165,19 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			cards, err = board.GetCards(trello.Arguments{"filter": "open"})
 		}
 		if err != nil {
-			logger("Error: Unable to get card data for board ID "+board.ID, "err", true, false, config)
-			os.Exit(1)
+			logger("CRITICAL - Error: Unable to get card data for board ID "+board.ID+" Error: "+err.Error(), "err", true, false, config)
+			errorWarnOnCompletion = true
+
+			return
 		}
 	}
 
-	// If no cards found, exit with message
+	// If no cards found, return with message
 	if len(cards) == 0 {
-		logger("No cards found for board "+board.Name, "warn", true, false, config)
-		os.Exit(0)
+		logger("CRITICAL - No cards found for board "+board.Name, "warn", true, false, config)
+		errorWarnOnCompletion = true
+
+		return
 	} else {
 		if len(cards) > 1 {
 			logger("Found "+strconv.Itoa(len(cards))+" cards to process.\nPlease wait...\n", "info", true, false, config)
@@ -194,8 +204,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		// find cards list name
 		list, err := client.GetList(card.IDList, trello.Defaults())
 		if err != nil {
-			logger("Error: Unable to get list data for list ID "+card.IDList, "err", true, false, config)
-			os.Exit(1)
+			logger("CRITICAL - Error: Unable to get list data for list ID "+card.IDList+" Error: "+err.Error(), "err", true, false, config)
+			errorWarnOnCompletion = true
+			return
 		}
 
 		// create list directory
@@ -222,7 +233,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			// Dump URL into card md file
 			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
 			if err != nil {
-				panic(err)
+				logger("CRITICAL - Unable to write buffer to file for "+thisCardPath+" Error: "+err.Error(), "err", true, true, config)
+				errorWarnOnCompletion = true
+
+				return
 			}
 		} else {
 			// If card is not a link, continue with normal processing
@@ -252,7 +266,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			// Create markdown file for card description
 			err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), 0644)
 			if err != nil {
-				panic(err)
+				logger("CRITICAL - Unable to write buffer to file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
+				errorWarnOnCompletion = true
+
+				return
 			}
 
 			/*
@@ -303,7 +320,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Write buffer to disc for URL Attachments
 				err := os.WriteFile(cardPath+"/attachments/URL-Attachments.md", buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 			} else {
 				logger("No attachments found for card "+card.Name, "warn", true, true, config)
@@ -361,7 +381,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create markdown file for card checklists
 				err = os.WriteFile(fullpath, buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+fullpath+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 			}
 
@@ -392,7 +415,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				commentFileName := cardPath + "/CardComments.md"
 				err = os.WriteFile(commentFileName, buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+commentFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created comments markdown file: "+commentFileName, "info", true, true, config)
 			} else {
@@ -429,7 +455,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				userFileName := cardPath + "/CardUsers.md"
 				err = os.WriteFile(userFileName, buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+userFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created users markdown file: "+userFileName, "info", true, true, config)
 			} else {
@@ -465,7 +494,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				labelFileName := cardPath + "/CardLabels.md"
 				err = os.WriteFile(labelFileName, buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+labelFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created labels markdown file: "+labelFileName, "info", true, true, config)
 			} else {
@@ -505,7 +537,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				historyFileName := cardPath + "/CardHistory.md"
 				err = os.WriteFile(historyFileName, buff.Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+historyFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created history markdown file: "+historyFileName, "info", true, true, config)
 			} else {
@@ -529,7 +564,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				err := os.WriteFile(dueFileName, []byte(card.Due.Format("2006-01-02 15:04:05")), 0644)
 
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+dueFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created due date markdown file: "+dueFileName, "info", true, true, config)
 			} else {
@@ -548,7 +586,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				startFileName := cardPath + "/CardStartDate.md"
 				err := os.WriteFile(startFileName, []byte(card.Start.Format("2006-01-02 15:04:05")), 0644)
 				if err != nil {
-					panic(err)
+					logger("CRITICAL - Unable to write buffer to file for "+startFileName+" Error: "+err.Error(), "err", true, true, config)
+					errorWarnOnCompletion = true
+
+					return
 				}
 				logger("Created start date markdown file: "+startFileName, "info", true, true, config)
 			} else {
