@@ -206,8 +206,12 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		isCardLink, _ := isLinkCard(client, card.ID)
 
 		if isCardLink {
+			// We should dump this into their own directory as they can be messy filenames
 			logger("This card is a link file only, processing as .MD instead of directory", "info", true, true, config)
-			thisCardPath := filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, SanitizePathName(card.Name)+".md")
+			thisCardLinkPath := filepath.Join(config.ARGS.StoragePath, boardPath, cleanListPath, "Link Cards Only")
+			dirCreate(thisCardLinkPath)
+			logger("Created Custom Directory for Link Cards: "+thisCardLinkPath, "info", true, true, config)
+			thisCardPath := filepath.Join(thisCardLinkPath, SanitizePathName(card.Name)+".md")
 			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
 			if err != nil {
 				panic(err)
