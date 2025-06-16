@@ -216,7 +216,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			cleanName := SanitizePathName(card.Name)
 			cleanName = strings.ReplaceAll(cleanName, "https---", "")
 			cleanName = strings.ReplaceAll(cleanName, "http---", "")
-			thisCardPath := filepath.Join(thisCardLinkPath, "CARD - "+cleanName+".md")
+			cleanName = "CARD - " + cleanName + ".md"
+			logger("New Clean Custom Card File Name: "+cleanName, "info", true, true, config)
+			thisCardPath := filepath.Join(thisCardLinkPath, cleanName)
 			// Dump URL into card md file
 			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
 			if err != nil {
