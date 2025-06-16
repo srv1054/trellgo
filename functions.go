@@ -72,8 +72,7 @@ func getCLIArgs() (config ARGS, boards []string) {
 	config.LabelID = *LabelID
 	config.ListLabelIDs = *ListLabelIDs
 	config.ListTotalCards = *ListTotalCards
-	// pre sanitize the path name
-	config.StoragePath = SanitizePathName(*StoragePath)
+	config.StoragePath = *StoragePath
 	config.SeparateArchived = *SeparateArchived
 	config.SuperQuiet = *QQ
 	config.LogFile = *LogFile
