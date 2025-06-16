@@ -342,7 +342,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 		filePath = localFilePath + fileName
 	}
 
-	logger("Downloading file named "+fileName+"from URL: "+fileURL+"to local path: "+filePath, "info", true, true, config)
+	logger("Downloading file named "+fileName+" from URL: "+fileURL+" to local path: "+filePath, "info", true, true, config)
 
 	// Create the file
 	out, err := os.Create(filePath)
