@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -210,6 +211,9 @@ func printHelp(version string) {
 	os.Exit(0)
 }
 
+// Secure directory permissions - owner access only
+const SecureDirMode = 0700
+
 /*
 dirCreate
 
@@ -221,7 +225,7 @@ func dirCreate(storagePath string) {
 
 		logger("Creating requested directory:"+storagePath, "info", true, true, config)
 
-		err := os.MkdirAll(storagePath, os.ModePerm)
+		err := os.MkdirAll(storagePath, SecureDirMode)
 		if err != nil {
 			logger("Error: Unable to create requested directory "+storagePath+": "+err.Error(), "err", true, false, config)
 			// This should always exist as it is critical to remaining file creations and downloads.  Script should halt here with messaging
@@ -292,17 +296,28 @@ SanitizePath
 
 	Sanitize the path for file system before creating directories.
 	Returns sanitized string that can be used as a directory name.  Windows and Linux safe.
+	Prevents path traversal attacks and handles reserved names.
 */
 func SanitizePathName(name string) string {
 
 	var cleaned string
 
+	// Remove path traversal attempts first
+	cleaned = strings.ReplaceAll(name, "..", "")
+	cleaned = strings.ReplaceAll(cleaned, "./", "")
+	cleaned = strings.ReplaceAll(cleaned, ".\\", "")
+
 	// Remove characters illegal on Windows and Linux filesystems
-	re := regexp.MustCompile(`[<>:"/\\|?*]`)
-	cleaned = re.ReplaceAllString(name, "-")
+	re := regexp.MustCompile(`[<>:"/\\|?*\x00-\x1f]`)
+	cleaned = re.ReplaceAllString(cleaned, "-")
 
 	// Trim leading and trailing chars to avoid hidden files or empty names
 	cleaned = strings.Trim(cleaned, " ._-")
+
+	// Check for Windows reserved names
+	if isReservedName(cleaned) {
+		cleaned = "RESERVED_" + cleaned
+	}
 
 	// Ensure it is not empty
 	if cleaned == "" {
@@ -318,6 +333,20 @@ func SanitizePathName(name string) string {
 	}
 
 	return cleaned
+}
+
+/*
+isReservedName checks for Windows reserved filenames that could cause issues
+*/
+func isReservedName(name string) bool {
+	reserved := []string{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
+	upper := strings.ToUpper(strings.TrimSuffix(name, filepath.Ext(name)))
+	for _, r := range reserved {
+		if upper == r {
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -345,7 +374,7 @@ func downLoadFile(fileURL string, localFilePath string) error {
 		filePath = localFilePath + fileName
 	}
 
-	logger("Downloading file named "+fileName+" from URL: "+fileURL+" to local path: "+filePath, "info", true, true, config)
+	logger("Downloading file named "+fileName+" from URL: "+sanitizeURLForLogging(fileURL)+" to local path: "+filePath, "info", true, true, config)
 
 	// Create the file
 	out, err := os.Create(filePath)
@@ -377,13 +406,29 @@ func downLoadFile(fileURL string, localFilePath string) error {
 }
 
 /*
+sanitizeURLForLogging removes sensitive credentials from URLs before logging
+Prevents API keys and tokens from appearing in logs
+*/
+func sanitizeURLForLogging(url string) string {
+	// Remove key and token parameters from URLs
+	re := regexp.MustCompile(`(key|token)=[^&\s]*`)
+	sanitized := re.ReplaceAllString(url, "$1=***")
+
+	// Also handle OAuth-style credentials in URLs
+	re2 := regexp.MustCompile(`oauth_[^=]*=[^&\s]*`)
+	sanitized = re2.ReplaceAllString(sanitized, "oauth_***=***")
+
+	return sanitized
+}
+
+/*
 downloadFileAuthHeader
 
 	Download file from URL to local file system when trello requires API authentication, likfe files attached to cards (PDF, etc)
 */
 func downloadFileAuthHeader(fileURL string, localFilePath string, apiKey string, apiToken string) error {
 
-	logger("Downloading file from URL: "+fileURL+" to local path: "+localFilePath, "info", true, true, config)
+	logger("Downloading file from URL: "+sanitizeURLForLogging(fileURL)+" to local path: "+localFilePath, "info", true, true, config)
 
 	// Create a new HTTP request with Authorization header
 	req, err := http.NewRequest("GET", fileURL, nil)

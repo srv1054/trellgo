@@ -11,6 +11,11 @@ import (
 	"github.com/adlio/trello"
 )
 
+// Secure file permissions - owner read/write only
+const (
+	SecureFileMode = 0600 // Owner read/write only
+)
+
 /*
 	Doing our own thing, as Trello Go Client doesn't support cardRole in card JSON as of 6/16/2025
 */
@@ -101,7 +106,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 
 		// Write buffer content to a file
 		labelFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardLabels.md")
-		err := os.WriteFile(labelFileName, buf.Bytes(), 0644)
+		err := os.WriteFile(labelFileName, buf.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+labelFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -130,7 +135,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		}
 		// Write buffer content to a file
 		memberFileName := filepath.Join(config.ARGS.StoragePath, boardPath, "BoardMembers.md")
-		err := os.WriteFile(memberFileName, memberBuf.Bytes(), 0644)
+		err := os.WriteFile(memberFileName, memberBuf.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+memberFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -151,7 +156,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	if config.ARGS.LabelID != "" {
 		logger("Searching for only cards with label ID: "+config.ARGS.LabelID, "info", true, false, config)
 		query := fmt.Sprintf("board:%s label:\"%s\" is:open", board.ID, config.ARGS.LabelID)
-		logger("Querying Trello API with: "+query, "info", true, true, config)
+		logger("Querying Trello API with: "+sanitizeURLForLogging(query), "info", true, true, config)
 		cards, err = client.SearchCards(query, trello.Defaults())
 		if err != nil {
 			logger("Error: Unable to get card data for board ID "+board.ID+" with label ID "+config.ARGS.LabelID, "err", true, false, config)
@@ -231,7 +236,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			logger("New Clean Custom Card File Name: "+cleanName, "info", true, true, config)
 			thisCardPath := filepath.Join(thisCardLinkPath, cleanName)
 			// Dump URL into card md file
-			err = os.WriteFile(thisCardPath, []byte(card.Name), 0644)
+			err = os.WriteFile(thisCardPath, []byte(card.Name), SecureFileMode)
 			if err != nil {
 				logger("CRITICAL - Unable to write buffer to file for "+thisCardPath+" Error: "+err.Error(), "err", true, true, config)
 				errorWarnOnCompletion = true
@@ -264,7 +269,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			*/
 			logger("Dumping card: "+card.Name, "info", true, true, config)
 			// Create markdown file for card description
-			err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), 0644)
+			err = os.WriteFile(cardPath+"/CardDescription.md", []byte(card.Desc), SecureFileMode)
 			if err != nil {
 				logger("CRITICAL - Unable to write buffer to file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
 				errorWarnOnCompletion = true
@@ -307,7 +312,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 						authURL := fmt.Sprintf("https://api.trello.com/1/cards/%s/attachments/%s/download/%s", card.ID, a.ID, a.Name)
 						err := downloadFileAuthHeader(authURL, filePath, config.ENV.TRELLOAPIKEY, config.ENV.TRELLOAPITOK)
 						if err != nil {
-							logger("Error downloading attachment from "+authURL+" to "+filePath+": "+err.Error(), "err", true, false, config)
+							logger("Error downloading attachment from "+sanitizeURLForLogging(authURL)+" to "+filePath+": "+err.Error(), "err", true, false, config)
 						}
 					} else {
 						// build a bytes.buffer
@@ -318,7 +323,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 
 				// Write buffer to disc for URL Attachments
-				err := os.WriteFile(cardPath+"/attachments/URL-Attachments.md", buff.Bytes(), 0644)
+				err := os.WriteFile(cardPath+"/attachments/URL-Attachments.md", buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -379,7 +384,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				logger("Creating checklist markdown file: "+fullpath, "info", true, true, config)
 
 				// Create markdown file for card checklists
-				err = os.WriteFile(fullpath, buff.Bytes(), 0644)
+				err = os.WriteFile(fullpath, buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+fullpath+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -413,7 +418,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 				// Create markdown file for card comments
 				commentFileName := cardPath + "/CardComments.md"
-				err = os.WriteFile(commentFileName, buff.Bytes(), 0644)
+				err = os.WriteFile(commentFileName, buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+commentFileName+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -426,7 +431,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty comments markdown file if no comments found
 				// This is to ensure the file exists for future reference
 				commentFileName := cardPath + "/CardComments.md"
-				_ = os.WriteFile(commentFileName, nil, 0644)
+				_ = os.WriteFile(commentFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -453,7 +458,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 				// Create markdown file for card users
 				userFileName := cardPath + "/CardUsers.md"
-				err = os.WriteFile(userFileName, buff.Bytes(), 0644)
+				err = os.WriteFile(userFileName, buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+userFileName+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -466,7 +471,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty users markdown file if no users found
 				// This is to ensure the file exists for future reference
 				userFileName := cardPath + "/CardUsers.md"
-				_ = os.WriteFile(userFileName, nil, 0644)
+				_ = os.WriteFile(userFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -492,7 +497,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 				// Create markdown file for card labels
 				labelFileName := cardPath + "/CardLabels.md"
-				err = os.WriteFile(labelFileName, buff.Bytes(), 0644)
+				err = os.WriteFile(labelFileName, buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+labelFileName+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -505,7 +510,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty labels markdown file if no labels found
 				// This is to ensure the file exists for future reference
 				labelFileName := cardPath + "/CardLabels.md"
-				_ = os.WriteFile(labelFileName, nil, 0644)
+				_ = os.WriteFile(labelFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -535,7 +540,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				}
 				// Create markdown file for card history
 				historyFileName := cardPath + "/CardHistory.md"
-				err = os.WriteFile(historyFileName, buff.Bytes(), 0644)
+				err = os.WriteFile(historyFileName, buff.Bytes(), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+historyFileName+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -548,7 +553,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty history markdown file if no history found
 				// This is to ensure the file exists for future reference
 				historyFileName := cardPath + "/CardHistory.md"
-				_ = os.WriteFile(historyFileName, nil, 0644)
+				_ = os.WriteFile(historyFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -561,7 +566,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				} else {
 					dueFileName = cardPath + "/CardDueDate.md"
 				}
-				err := os.WriteFile(dueFileName, []byte(card.Due.Format("2006-01-02 15:04:05")), 0644)
+				err := os.WriteFile(dueFileName, []byte(card.Due.Format("2006-01-02 15:04:05")), SecureFileMode)
 
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+dueFileName+" Error: "+err.Error(), "err", true, true, config)
@@ -575,7 +580,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty due date markdown file if no due date found
 				// This is to ensure the file exists for future reference
 				dueFileName := cardPath + "/CardDueDate.md"
-				_ = os.WriteFile(dueFileName, nil, 0644)
+				_ = os.WriteFile(dueFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -584,7 +589,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			*/
 			if card.Start != nil {
 				startFileName := cardPath + "/CardStartDate.md"
-				err := os.WriteFile(startFileName, []byte(card.Start.Format("2006-01-02 15:04:05")), 0644)
+				err := os.WriteFile(startFileName, []byte(card.Start.Format("2006-01-02 15:04:05")), SecureFileMode)
 				if err != nil {
 					logger("CRITICAL - Unable to write buffer to file for "+startFileName+" Error: "+err.Error(), "err", true, true, config)
 					errorWarnOnCompletion = true
@@ -597,7 +602,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				// Create an empty start date markdown file if no start date found
 				// This is to ensure the file exists for future reference
 				startFileName := cardPath + "/CardStartDate.md"
-				_ = os.WriteFile(startFileName, nil, 0644)
+				_ = os.WriteFile(startFileName, nil, SecureFileMode)
 			}
 
 			/*
@@ -609,7 +614,7 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 				logger("No cover set on card "+card.Name, "info", true, true, config)
 			} else if card.Cover.Color != "" {
 				colorFile := filepath.Join(cardPath, "CardCoverColor.md")
-				if err := os.WriteFile(colorFile, []byte(card.Cover.Color), 0644); err != nil {
+				if err := os.WriteFile(colorFile, []byte(card.Cover.Color), SecureFileMode); err != nil {
 					logger("Error writing cover color for "+card.Name+": "+err.Error(), "err", true, false, config)
 				}
 			} else {
