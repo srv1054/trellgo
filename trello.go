@@ -26,8 +26,32 @@ type CardProcessingJob struct {
 	boardPath string
 	config    Config
 	client    *trello.Client
+	listCache map[string]*trello.List
 	index     int
 	total     int
+}
+
+// Buffer pool for reusing byte buffers across concurrent workers
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
+
+// getBuffer gets a clean buffer from the pool
+func getBuffer() *bytes.Buffer {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset() // Ensure buffer is clean
+	return buf
+}
+
+// putBuffer returns a buffer to the pool for reuse
+func putBuffer(buf *bytes.Buffer) {
+	// Don't return huge buffers to the pool to avoid memory bloat
+	if buf.Cap() > 64*1024 { // 64KB limit
+		return
+	}
+	bufferPool.Put(buf)
 }
 
 /*
@@ -63,20 +87,29 @@ func processSingleCard(job CardProcessingJob) error {
 		cardPath      string
 		dueFileName   string
 		cardNumber    int
-		buff          bytes.Buffer
 	)
+
+	// Get buffer from pool instead of allocating new one
+	buff := getBuffer()
+	defer putBuffer(buff) // Return buffer to pool when done
 
 	card := job.card
 	config := job.config
 	client := job.client
 	boardPath := job.boardPath
+	listCache := job.listCache
 
-	// find cards list name
-	list, err := client.GetList(card.IDList, trello.Defaults())
-	if err != nil {
-		logger("CRITICAL - Error: Unable to get list data for list ID "+card.IDList+" Error: "+err.Error(), "err", true, false, config)
-		errorWarnOnCompletion = true
-		return err
+	// Use cached list instead of API call
+	list, exists := listCache[card.IDList]
+	if !exists {
+		// Fallback to API call if not in cache
+		var err error
+		list, err = client.GetList(card.IDList, trello.Defaults())
+		if err != nil {
+			logger("CRITICAL - Error: Unable to get list data for list ID "+card.IDList+" Error: "+err.Error(), "err", true, false, config)
+			errorWarnOnCompletion = true
+			return err
+		}
 	}
 
 	// create list directory
@@ -91,8 +124,15 @@ func processSingleCard(job CardProcessingJob) error {
 		return processLinkCard(card, config, boardPath, cleanListPath)
 	}
 
-	// Process regular card
-	return processRegularCard(card, config, client, boardPath, cleanListPath, &buff, &cardNumber, &dueFileName, &cleanCardPath, &cardPath)
+	// Get comprehensive card data in one API call instead of multiple calls
+	comprehensiveCard, err := getComprehensiveCardData(card.ID, client)
+	if err != nil {
+		logger("Warning: Failed to get comprehensive card data, falling back to individual calls: "+err.Error(), "warn", true, true, config)
+		comprehensiveCard = card // Fallback to original card
+	}
+
+	// Process regular card with comprehensive data
+	return processRegularCard(comprehensiveCard, config, client, boardPath, cleanListPath, buff, &cardNumber, &dueFileName, &cleanCardPath, &cardPath)
 }
 
 /*
@@ -193,12 +233,19 @@ func processCardDescription(card *trello.Card, cardPath string, config Config) e
 
 /*
 processCardAttachments downloads file attachments and saves URL attachments
+Uses comprehensive card data instead of additional API call
 */
 func processCardAttachments(card *trello.Card, cardPath string, config Config, buff *bytes.Buffer) error {
-	attachments, err := card.GetAttachments(trello.Defaults())
-	if err != nil {
-		logger("Error: Unable to get attachment data for card ID "+card.ID+": "+err.Error(), "err", true, true, config)
-		return nil // Don't fail the entire card for attachment errors
+	// PERFORMANCE: Use attachments from comprehensive card data instead of API call
+	attachments := card.Attachments
+	if attachments == nil {
+		// Fallback to API call if not available in comprehensive data
+		var err error
+		attachments, err = card.GetAttachments(trello.Defaults())
+		if err != nil {
+			logger("Error: Unable to get attachment data for card ID "+card.ID+": "+err.Error(), "err", true, true, config)
+			return nil // Don't fail the entire card for attachment errors
+		}
 	}
 
 	// Clear the old Bytes Buffer
@@ -309,14 +356,27 @@ func processCardChecklists(card *trello.Card, client *trello.Client, cardPath st
 
 /*
 processCardComments creates markdown file for card comments
+Uses comprehensive card data instead of additional API call
 */
 func processCardComments(card *trello.Card, cardPath string, config Config, buff *bytes.Buffer) error {
 	logger("Grabbing comments for card: "+card.Name, "info", true, true, config)
 
-	comments, err := card.GetActions(trello.Arguments{"filter": "commentCard"})
-	if err != nil {
-		logger("Error: Unable to get comments for card ID "+card.ID, "err", true, false, config)
-		return nil // Don't fail the entire card for comment errors
+	// Filter comments from comprehensive card actions instead of API call
+	var comments []*trello.Action
+	if card.Actions != nil {
+		for _, action := range card.Actions {
+			if action != nil && action.Type == "commentCard" {
+				comments = append(comments, action)
+			}
+		}
+	} else {
+		// Fallback to API call if actions not available in comprehensive data
+		var err error
+		comments, err = card.GetActions(trello.Arguments{"filter": "commentCard"})
+		if err != nil {
+			logger("Error: Unable to get comments for card ID "+card.ID, "err", true, false, config)
+			return nil // Don't fail the entire card for comment errors
+		}
 	}
 
 	commentFileName := filepath.Join(cardPath, "CardComments.md")
@@ -332,7 +392,7 @@ func processCardComments(card *trello.Card, cardPath string, config Config, buff
 			buff.WriteString(fmt.Sprintf("**%s** (%s): %s\n", comment.MemberCreator.FullName, comment.Date.Format("2006-01-02 15:04:05"), comment.Data.Text))
 		}
 		// Create markdown file for card comments
-		err = os.WriteFile(commentFileName, buff.Bytes(), SecureFileMode)
+		err := os.WriteFile(commentFileName, buff.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+commentFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -349,14 +409,21 @@ func processCardComments(card *trello.Card, cardPath string, config Config, buff
 
 /*
 processCardUsers creates markdown file for card users/members
+Uses comprehensive card data instead of additional API call
 */
 func processCardUsers(card *trello.Card, cardPath string, config Config, buff *bytes.Buffer) error {
 	logger("Grabbing users for card: "+card.Name, "info", true, true, config)
 
-	members, err := card.GetMembers()
-	if err != nil {
-		logger("Error: Unable to get members for card ID "+card.ID, "err", true, false, config)
-		return nil // Don't fail the entire card for member errors
+	// Use members from comprehensive card data instead of API call
+	members := card.Members
+	if members == nil {
+		// Fallback to API call if not available in comprehensive data
+		var err error
+		members, err = card.GetMembers()
+		if err != nil {
+			logger("Error: Unable to get members for card ID "+card.ID, "err", true, false, config)
+			return nil // Don't fail the entire card for member errors
+		}
 	}
 
 	userFileName := filepath.Join(cardPath, "CardUsers.md")
@@ -372,7 +439,7 @@ func processCardUsers(card *trello.Card, cardPath string, config Config, buff *b
 			buff.WriteString(fmt.Sprintf("**%s** (%s)\n", member.FullName, member.ID))
 		}
 		// Create markdown file for card users
-		err = os.WriteFile(userFileName, buff.Bytes(), SecureFileMode)
+		err := os.WriteFile(userFileName, buff.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+userFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -389,22 +456,29 @@ func processCardUsers(card *trello.Card, cardPath string, config Config, buff *b
 
 /*
 processCardLabels creates markdown file for card labels
+Uses comprehensive card data instead of additional API call
 */
 func processCardLabels(card *trello.Card, client *trello.Client, cardPath string, config Config, buff *bytes.Buffer) error {
 	logger("Grabbing labels for card: "+card.Name, "info", true, true, config)
 
-	cardWithLabels, err := client.GetCard(card.ID, trello.Arguments{"labels": "all"})
-	if err != nil {
-		logger("Error: Unable to get labels for card ID "+card.ID, "err", true, false, config)
-		return nil // Don't fail the entire card for label errors
+	// PERFORMANCE: Use labels from comprehensive card data instead of additional API call
+	labels := card.Labels
+	if labels == nil {
+		// Fallback to API call if not available in comprehensive data
+		cardWithLabels, err := client.GetCard(card.ID, trello.Arguments{"labels": "all"})
+		if err != nil {
+			logger("Error: Unable to get labels for card ID "+card.ID, "err", true, false, config)
+			return nil // Don't fail the entire card for label errors
+		}
+		labels = cardWithLabels.Labels
 	}
 
 	labelFileName := filepath.Join(cardPath, "CardLabels.md")
-	if len(cardWithLabels.Labels) > 0 {
+	if len(labels) > 0 {
 		// Clear the old Bytes Buffer
 		buff.Reset()
-		logger("Found "+strconv.Itoa(len(cardWithLabels.Labels))+" labels for card "+card.Name, "info", true, true, config)
-		for _, label := range cardWithLabels.Labels {
+		logger("Found "+strconv.Itoa(len(labels))+" labels for card "+card.Name, "info", true, true, config)
+		for _, label := range labels {
 			if label == nil {
 				continue
 			}
@@ -412,7 +486,7 @@ func processCardLabels(card *trello.Card, client *trello.Client, cardPath string
 			buff.WriteString(fmt.Sprintf("**%s** - %s (%s)\n", label.Name, label.Color, label.ID))
 		}
 		// Create markdown file for card labels
-		err = os.WriteFile(labelFileName, buff.Bytes(), SecureFileMode)
+		err := os.WriteFile(labelFileName, buff.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+labelFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -429,14 +503,21 @@ func processCardLabels(card *trello.Card, client *trello.Client, cardPath string
 
 /*
 processCardHistory creates markdown file for card history/actions
+Uses comprehensive card data instead of additional API call
 */
 func processCardHistory(card *trello.Card, cardPath string, config Config, buff *bytes.Buffer) error {
 	logger("Grabbing history for card: "+card.Name, "info", true, true, config)
 
-	history, err := card.GetActions(trello.Arguments{"filter": "all"})
-	if err != nil {
-		logger("Error: Unable to get history for card ID "+card.ID, "err", true, true, config)
-		return nil // Don't fail the entire card for history errors
+	// Use actions from comprehensive card data instead of API call
+	history := card.Actions
+	if history == nil {
+		// Fallback to API call if not available in comprehensive data
+		var err error
+		history, err = card.GetActions(trello.Arguments{"filter": "all"})
+		if err != nil {
+			logger("Error: Unable to get history for card ID "+card.ID, "err", true, true, config)
+			return nil // Don't fail the entire card for history errors
+		}
 	}
 
 	historyFileName := filepath.Join(cardPath, "CardHistory.md")
@@ -455,7 +536,7 @@ func processCardHistory(card *trello.Card, cardPath string, config Config, buff 
 			buff.WriteString(fmt.Sprintf("**%s** (%s): %s - %s\n", action.Type, action.Date.Format("2006-01-02 15:04:05"), action.MemberCreator.FullName, action.Data.Text))
 		}
 		// Create markdown file for card history
-		err = os.WriteFile(historyFileName, buff.Bytes(), SecureFileMode)
+		err := os.WriteFile(historyFileName, buff.Bytes(), SecureFileMode)
 		if err != nil {
 			logger("CRITICAL - Unable to write buffer to file for "+historyFileName+" Error: "+err.Error(), "err", true, true, config)
 			errorWarnOnCompletion = true
@@ -533,10 +614,61 @@ func processCardCover(card *trello.Card, cardPath string, config Config) error {
 }
 
 /*
+createListCache fetches all lists for the board once to avoid repeated API calls
+*/
+func createListCache(board *trello.Board, config Config) (map[string]*trello.List, error) {
+	logger("Caching board lists for performance", "info", true, true, config)
+
+	lists, err := board.GetLists(trello.Defaults())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get board lists: %w", err)
+	}
+
+	listCache := make(map[string]*trello.List)
+	for _, list := range lists {
+		if list != nil {
+			listCache[list.ID] = list
+		}
+	}
+
+	logger(fmt.Sprintf("Cached %d lists for board %s", len(listCache), board.Name), "info", true, true, config)
+	return listCache, nil
+}
+
+/*
+getComprehensiveCardData fetches all card data in fewer API calls
+*/
+func getComprehensiveCardData(cardID string, client *trello.Client) (*trello.Card, error) {
+	// Get card with all related data in one call
+	args := trello.Arguments{
+		"attachments":     "true",
+		"actions":         "all",
+		"actions_limit":   "1000",
+		"members":         "true",
+		"labels":          "all",
+		"checklists":      "all",
+		"checkItemStates": "true",
+	}
+
+	cardData, err := client.GetCard(cardID, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get comprehensive card data for %s: %w", cardID, err)
+	}
+
+	return cardData, nil
+}
+
+/*
 processCardsConcurrently manages concurrent processing of cards using a worker pool
-PERFORMANCE: Processes multiple cards in parallel for significant speed improvement
 */
 func processCardsConcurrently(cards []*trello.Card, board *trello.Board, boardPath string, config Config, client *trello.Client) {
+	//  Cache all lists once instead of fetching per card
+	listCache, err := createListCache(board, config)
+	if err != nil {
+		logger("Error caching board lists: "+err.Error(), "err", true, false, config)
+		// Fallback to individual list calls
+		listCache = make(map[string]*trello.List)
+	}
 	numCards := len(cards)
 	if numCards == 0 {
 		return
@@ -569,6 +701,7 @@ func processCardsConcurrently(cards []*trello.Card, board *trello.Board, boardPa
 				boardPath: boardPath,
 				config:    config,
 				client:    client,
+				listCache: listCache,
 				index:     i,
 				total:     numCards,
 			}
@@ -700,7 +833,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	if err != nil {
 		logger("Error: Unable to get members for board ID "+board.ID, "err", true, true, config)
 	} else {
-		var memberBuf bytes.Buffer
+		memberBuf := getBuffer()
+		defer putBuffer(memberBuf)
+
 		for _, member := range members {
 			if member == nil {
 				continue
