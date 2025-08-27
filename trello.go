@@ -31,6 +31,29 @@ type CardProcessingJob struct {
 	total     int
 }
 
+// Buffer pool for reusing byte buffers across concurrent workers
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
+}
+
+// getBuffer gets a clean buffer from the pool
+func getBuffer() *bytes.Buffer {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset() // Ensure buffer is clean
+	return buf
+}
+
+// putBuffer returns a buffer to the pool for reuse
+func putBuffer(buf *bytes.Buffer) {
+	// Don't return huge buffers to the pool to avoid memory bloat
+	if buf.Cap() > 64*1024 { // 64KB limit
+		return
+	}
+	bufferPool.Put(buf)
+}
+
 /*
 processCardWorker processes individual cards concurrently
 */
@@ -64,8 +87,11 @@ func processSingleCard(job CardProcessingJob) error {
 		cardPath      string
 		dueFileName   string
 		cardNumber    int
-		buff          bytes.Buffer
 	)
+
+	// Get buffer from pool instead of allocating new one
+	buff := getBuffer()
+	defer putBuffer(buff) // Return buffer to pool when done
 
 	card := job.card
 	config := job.config
@@ -106,7 +132,7 @@ func processSingleCard(job CardProcessingJob) error {
 	}
 
 	// Process regular card with comprehensive data
-	return processRegularCard(comprehensiveCard, config, client, boardPath, cleanListPath, &buff, &cardNumber, &dueFileName, &cleanCardPath, &cardPath)
+	return processRegularCard(comprehensiveCard, config, client, boardPath, cleanListPath, buff, &cardNumber, &dueFileName, &cleanCardPath, &cardPath)
 }
 
 /*
@@ -807,7 +833,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 	if err != nil {
 		logger("Error: Unable to get members for board ID "+board.ID, "err", true, true, config)
 	} else {
-		var memberBuf bytes.Buffer
+		memberBuf := getBuffer()
+		defer putBuffer(memberBuf)
+
 		for _, member := range members {
 			if member == nil {
 				continue
