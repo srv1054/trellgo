@@ -106,9 +106,9 @@ func processSingleCard(job CardProcessingJob) error {
 		var err error
 		list, err = client.GetList(card.IDList, trello.Defaults())
 		if err != nil {
-			logger("CRITICAL - Error: Unable to get list data for list ID "+card.IDList+" Error: "+err.Error(), "err", true, false, config)
-			errorWarnOnCompletion = true
-			return err
+			return handleProcessingError(
+				newProcessingError("get list data", fmt.Sprintf("list ID %s", card.IDList), ErrorSeverityCritical, err),
+				config)
 		}
 	}
 
@@ -224,9 +224,9 @@ func processCardDescription(card *trello.Card, cardPath string, config Config) e
 	logger("Dumping card: "+card.Name, "info", true, true, config)
 	err := os.WriteFile(filepath.Join(cardPath, "CardDescription.md"), []byte(card.Desc), SecureFileMode)
 	if err != nil {
-		logger("CRITICAL - Unable to write buffer to file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
-		errorWarnOnCompletion = true
-		return err
+		return handleProcessingError(
+			newProcessingError("write card description", fmt.Sprintf("card %s", card.Name), ErrorSeverityCritical, err),
+			config)
 	}
 	return nil
 }
@@ -243,8 +243,9 @@ func processCardAttachments(card *trello.Card, cardPath string, config Config, b
 		var err error
 		attachments, err = card.GetAttachments(trello.Defaults())
 		if err != nil {
-			logger("Error: Unable to get attachment data for card ID "+card.ID+": "+err.Error(), "err", true, true, config)
-			return nil // Don't fail the entire card for attachment errors
+			return handleProcessingError(
+				newProcessingError("get attachments", fmt.Sprintf("card %s", card.Name), ErrorSeverityWarning, err),
+				config)
 		}
 	}
 
@@ -286,9 +287,9 @@ func processCardAttachments(card *trello.Card, cardPath string, config Config, b
 		// Write buffer to disc for URL Attachments
 		err := os.WriteFile(filepath.Join(cardPath, "attachments", "URL-Attachments.md"), buff.Bytes(), SecureFileMode)
 		if err != nil {
-			logger("CRITICAL - Unable to write URL attachments file for "+cardPath+" Error: "+err.Error(), "err", true, true, config)
-			errorWarnOnCompletion = true
-			return err
+			return handleProcessingError(
+				newProcessingError("write URL attachments", fmt.Sprintf("card %s", card.Name), ErrorSeverityCritical, err),
+				config)
 		}
 	} else {
 		logger("No attachments found for card "+card.Name, "warn", true, true, config)
@@ -868,8 +869,10 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 		logger("Querying Trello API with: "+sanitizeURLForLogging(query), "info", true, true, config)
 		cards, err = client.SearchCards(query, trello.Defaults())
 		if err != nil {
-			logger("Error: Unable to get card data for board ID "+board.ID+" with label ID "+config.ARGS.LabelID, "err", true, false, config)
-			os.Exit(1)
+			handleProcessingError(
+				newProcessingError("search cards by label", fmt.Sprintf("board %s, label %s", board.Name, config.ARGS.LabelID), ErrorSeverityCritical, err),
+				config)
+			return
 		}
 	} else {
 		// If no specific label ID is provided, get all cards based on the -a flag
@@ -879,9 +882,9 @@ func dumpABoard(config Config, board *trello.Board, client *trello.Client) {
 			cards, err = board.GetCards(trello.Arguments{"filter": "open"})
 		}
 		if err != nil {
-			logger("CRITICAL - Error: Unable to get card data for board ID "+board.ID+" Error: "+err.Error(), "err", true, false, config)
-			errorWarnOnCompletion = true
-
+			handleProcessingError(
+				newProcessingError("get board cards", fmt.Sprintf("board %s", board.Name), ErrorSeverityCritical, err),
+				config)
 			return
 		}
 	}

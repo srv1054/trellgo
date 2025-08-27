@@ -28,7 +28,7 @@ type Config struct {
 func main() {
 
 	// Major.Feature.Patch
-	version = "0.3.15"
+	version = "0.3.1.17"
 
 	// No errors so far!
 	errorWarnOnCompletion = false

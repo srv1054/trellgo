@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -75,4 +76,73 @@ func startLog(config Config) bool {
 	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	return true
+}
+
+/*
+Error handling types and utilities for consistent error management
+*/
+
+// ErrorSeverity defines the severity level of errors
+type ErrorSeverity int
+
+const (
+	ErrorSeverityWarning  ErrorSeverity = iota // Non-critical, continue processing
+	ErrorSeverityError                         // Significant error, skip current item
+	ErrorSeverityCritical                      // Fatal error, stop processing
+)
+
+// ProcessingError wraps errors with context and severity
+type ProcessingError struct {
+	Operation string
+	Context   string
+	Severity  ErrorSeverity
+	Err       error
+}
+
+func (e *ProcessingError) Error() string {
+	return fmt.Sprintf("%s failed for %s: %v", e.Operation, e.Context, e.Err)
+}
+
+func (e *ProcessingError) Unwrap() error {
+	return e.Err
+}
+
+// newProcessingError creates a new processing error with context
+func newProcessingError(operation, context string, severity ErrorSeverity, err error) *ProcessingError {
+	return &ProcessingError{
+		Operation: operation,
+		Context:   context,
+		Severity:  severity,
+		Err:       err,
+	}
+}
+
+// handleProcessingError handles errors consistently based on severity
+func handleProcessingError(err error, config Config) error {
+	if err == nil {
+		return nil
+	}
+
+	var procErr *ProcessingError
+	if !errors.As(err, &procErr) {
+		// Wrap non-ProcessingError errors as warnings
+		procErr = newProcessingError("unknown operation", "unknown context", ErrorSeverityWarning, err)
+	}
+
+	// Log based on severity
+	switch procErr.Severity {
+	case ErrorSeverityWarning:
+		logger("Warning: "+procErr.Error(), "warn", true, true, config)
+		return nil // Continue processing
+	case ErrorSeverityError:
+		logger("Error: "+procErr.Error(), "err", true, false, config)
+		return procErr // Skip current item but continue
+	case ErrorSeverityCritical:
+		logger("CRITICAL: "+procErr.Error(), "err", true, false, config)
+		errorWarnOnCompletion = true
+		return procErr // Stop processing
+	default:
+		logger("Unknown error severity: "+procErr.Error(), "err", true, false, config)
+		return procErr
+	}
 }
